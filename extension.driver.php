@@ -13,8 +13,8 @@
 		public function about() {
 			return array(
 				'name'			=> 'Filter: Email Template',
-				'version'		=> '1.006',
-				'release-date'	=> '2008-12-11',
+				'version'		=> '1.008',
+				'release-date'	=> '2008-02-06',
 				'author'		=> array(
 					'name'			=> 'Rowan Lewis',
 					'website'		=> 'http://pixelcarnage.com/',
@@ -146,7 +146,7 @@
 		
 		public function getConditions($template_id = null) {
 			if (is_numeric($template_id)) {
-				return $this->_Parent->Database->fetch("
+				$results = $this->_Parent->Database->fetch("
 					SELECT
 						c.*
 					FROM
@@ -158,7 +158,7 @@
 				");
 				
 			} else {
-				return $this->_Parent->Database->fetch("
+				$results = $this->_Parent->Database->fetch("
 					SELECT
 						c.*
 					FROM
@@ -167,9 +167,11 @@
 						c.sortorder ASC
 				");
 			}
+			
+			return $results;
 		}
 		
-		protected function getData($entry_id) {
+		protected function getData($entry_id, $fields) {
 			$entry_xml = $param_xml = null;
 			
 			if (!empty(self::$params)) {
@@ -179,7 +181,7 @@
 			
 			if (!empty($entry_id)) {
 				$entry_xml = new XMLElement('entry');
-				$this->getDataEntry($entry_id, $entry_xml);
+				$this->getDataEntry($entry_id, $entry_xml, $fields);
 			}
 			
 			if (!empty($param_xml) and !empty($entry_xml)) {
@@ -218,15 +220,12 @@
 			}
 		}
 		
-		protected function getDataEntry($entry_id, $xml) {
+		protected function getDataEntry($entry_id, $xml, $fields) {
 			$entryManager = new EntryManager($this->_Parent);
 			$entryManager->setFetchSorting('id', 'ASC');
 			$entries = $entryManager->fetch($entry_id, null, null, null, null, null, false, true);
 			
 			$entry = @$entries[0];
-			$section_id = $entry->_fields['section_id'];
-			$data = $entry->getData(); $fields = array();
-			
 			$xml->setAttribute('id', $entry->get('id'));
 			
 			$associated = $entry->fetchAllAssociatedEntryCounts();
@@ -248,9 +247,16 @@
 			}
 			
 			// Add fields:
-			foreach ($data as $field_id => $values) {
-				$field =& $entryManager->fieldManager->fetch($field_id);
-				$field->appendFormattedElement($xml, $values, false);
+			foreach ($fields as $handle) {
+				list($handle, $mode) = preg_split('/\s*:\s*/', $handle, 2);
+				list($section_id, $handle) = explode('/', $handle);
+				
+				if ($section_id == $entry->get('section_id')) {
+					$field_id = $entryManager->fieldManager->fetchFieldIDFromElementName($handle);
+					$field = $entryManager->fieldManager->fetch($field_id);
+					
+					$field->appendFormattedElement($xml, $entry->getData($field_id), false, $mode);
+				}
 			}
 		}
 		
@@ -345,15 +351,21 @@
 		}
 		
 		public function getTemplate($template_id) {
-			return $this->_Parent->Database->fetchRow(0, "
+			$result = $this->_Parent->Database->fetchRow(0, "
 				SELECT
-					t.id, t.name
+					t.id, t.name, t.included_fields
 				FROM
 					`tbl_etf_templates` AS t
 				WHERE
 					t.id = '{$template_id}'
 				LIMIT 1
 			");
+			
+			if (empty($result)) return $result;
+			
+			$result['included_fields'] = @unserialize($result['included_fields']);
+			
+			return $result;
 		}
 		
 	/*-------------------------------------------------------------------------
@@ -387,11 +399,13 @@
 		public function sendEmail($entry_id, $template_id) {
 			header('content-type: text/plain');
 			
-			$data = $this->getData($entry_id);
-			$xpath = new DOMXPath($data);
+			$template = $this->getTemplate($template_id);
 			$conditions = $this->getConditions($template_id);
-			$email = null;
+			$data = $this->getData($entry_id, $template['included_fields']);
+			$xpath = new DOMXPath($data);
+			$email = null; $fields = array();
 			
+			// Find condition:
 			foreach ($conditions as $condition) {
 				if (empty($condition['expression'])) {
 					$email = $condition; break;
@@ -461,7 +475,7 @@
 			
 			//var_dump($data->saveXML());
 			//var_dump(self::$params);
-			//var_dump($email);
+			//var_dump($data->saveXML());
 			//exit;
 			
 			// Send the email:

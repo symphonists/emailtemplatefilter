@@ -101,6 +101,7 @@
 		// Save: --------------------------------------------------------------
 			
 			$this->_fields['conditions'] = (integer)count($this->_conditions);
+			$this->_fields['included_fields'] = serialize($this->_fields['included_fields']);
 			
 			$this->_Parent->Database->insert($this->_fields, 'tbl_etf_templates', true);
 			
@@ -135,12 +136,14 @@
 		}
 		
 		public function __viewEdit() {
+			$this->addStylesheetToHead(URL . '/extensions/emailtemplatefilter/assets/templates.css', 'screen', 1000);
+			
 		// Status: -----------------------------------------------------------
 			
 			if (!$this->_valid) $this->pageAlert('
 				An error occurred while processing this form.
 				<a href="#error">See below for details.</a>',
-				AdministrationPage::PAGE_ALERT_ERROR
+				Alert::ERROR
 			);
 			
 			// Status message:
@@ -148,15 +151,21 @@
 				$action = null;
 				
 				switch($this->_status) {
-					case 'saved': $action = 'updated'; break;
-					case 'created': $action = 'created'; break;
+					case 'saved': $action = '%1$s updated at %2$s. <a href="%3$s">Create another?</a> <a href="%4$s">View all %5$s</a>'; break;
+					case 'created': $action = '%1$s created at %2$s. <a href="%3$s">Create another?</a> <a href="%4$s">View all %5$s</a>'; break;
 				}
 				
 				if ($action) $this->pageAlert(
-					'Template {1} successfully. <a href="{2}/symphony/{3}">Create another?</a>',
-					AdministrationPage::PAGE_ALERT_NOTICE, array(
-						$action, URL, 'extension/emailtemplatefilter/templates/new/'
-					)
+					__(
+						$action, array(
+							__('Template'), 
+							DateTimeObj::get(__SYM_TIME_FORMAT__), 
+							URL . '/symphony/extension/emailtemplatefilter/templates/new/', 
+							URL . '/symphony/extension/emailtemplatefilter/templates/',
+							__('Templates')
+						)
+					),
+					Alert::SUCCESS
 				);
 			}
 			
@@ -194,13 +203,13 @@
 			
 			$fieldset = new XMLElement('fieldset');
 			$fieldset->setAttribute('class', 'settings');
-			$fieldset->appendChild(new XMLElement('legend', 'Essentials'));
+			$fieldset->appendChild(new XMLElement('legend', __('Essentials')));
 			
 			if (!empty($this->_fields['id'])) {
 				$fieldset->appendChild(Widget::Input("fields[id]", $this->_fields['id'], 'hidden'));
 			}
 			
-			$label = Widget::Label('Name');
+			$label = Widget::Label(__('Name'));
 			$label->appendChild(Widget::Input(
 				'fields[name]',
 				General::sanitize(@$this->_fields['name'])
@@ -212,15 +221,50 @@
 			
 			$fieldset->appendChild($label);
 			
+		// Fields -------------------------------------------------------------
+			
+			$sectionManager = new SectionManager($this->_Parent);
+			$sections = $sectionManager->fetch();
+			
+			$options = array();
+			
+			foreach ($sections as $section) {
+				$section_id = $section->get('id');
+				$options[$section_id] = array(
+					'label'		=> $section->get('name'),
+					'options'	=> array()
+				);
+				
+				foreach ($section->fetchFields() as $field) {
+					foreach ($field->fetchIncludableElements() as $item) {
+						$id = "{$section_id}/{$item}";
+						$selected = in_array($id, $this->_fields['included_fields']);
+						
+						$options[$section_id]['options'][] = array(
+							$id, $selected, $item
+						);
+					}
+				}
+			}
+			
+			$label = Widget::Label(__('Included Fields'));
+			$label->appendChild(Widget::Select(
+				"fields[included_fields][]", $options,
+				array('multiple' => 'multiple')
+			));
+			$fieldset->appendChild($label);
+			
 			$this->Form->appendChild($fieldset);
+			
+		// Conditions -------------------------------------------------------------
 			
 			$fieldset = new XMLElement('fieldset');
 			$fieldset->setAttribute('class', 'settings');
-			$fieldset->appendChild(new XMLElement('legend', 'Conditions'));
+			$fieldset->appendChild(new XMLElement('legend', __('Conditions')));
 			
 			$div = new XMLElement('div');
 			$div->setAttribute('class', 'subsection');
-			$div->appendChild(new XMLElement('h3', 'Conditions'));
+			$div->appendChild(new XMLElement('h3', __('Conditions')));
 			$ol = new XMLElement('ol');
 			
 			// Add existing conditions:
@@ -244,7 +288,6 @@
 			
 			$div->appendChild($ol);
 			$fieldset->appendChild($div);
-			
 			$this->Form->appendChild($fieldset);
 			
 		// Footer: ------------------------------------------------------------
@@ -286,7 +329,7 @@
 			$div = new XMLElement('div');
 			$div->setAttribute('class', 'group');
 			
-			$label = Widget::Label('Subject');
+			$label = Widget::Label(__('Subject'));
 			$label->appendChild(Widget::Input(
 				"conditions[{$sortorder}][subject]",
 				General::sanitize($condition['subject'])
@@ -300,7 +343,7 @@
 			
 		// Sender Name --------------------------------------------------------
 			
-			$label = Widget::Label('Sender Name');
+			$label = Widget::Label(__('Sender Name'));
 			$label->appendChild(Widget::Input(
 				"conditions[{$sortorder}][sender]",
 				General::sanitize($condition['sender'])
@@ -318,7 +361,7 @@
 			
 		// Senders ------------------------------------------------------------
 			
-			$label = Widget::Label('Senders');
+			$label = Widget::Label(__('Senders'));
 			$label->appendChild(Widget::Input(
 				"conditions[{$sortorder}][senders]",
 				General::sanitize($condition['senders'])
@@ -332,7 +375,7 @@
 			
 		// Recipients ---------------------------------------------------------
 			
-			$label = Widget::Label('Recipients');
+			$label = Widget::Label(__('Recipients'));
 			$label->appendChild(Widget::Input(
 				"conditions[{$sortorder}][recipients]",
 				General::sanitize($condition['recipients'])
@@ -345,11 +388,20 @@
 			$div->appendChild($label);
 			$wrapper->appendChild($div);
 			
+			$help = new XMLElement('p');
+			$help->setAttribute('class', 'help');
+			$help->setValue(__('To access the entry data, use XPath expressions: <code>{entry/field-one} static text {entry/field-two}</code>.'));
+			$wrapper->appendChild($help);
+			
 		// Expression ---------------------------------------------------------
 			
-			$wrapper->appendChild(new XMLElement('h5', 'Technical'));
+			$wrapper->appendChild(new XMLElement('h5', __('Technical')));
 			
-			$label = Widget::Label('Expression');
+			$div = new XMLElement('div');
+			$div->setAttribute('class', 'group triple');
+			$container = new XMLElement('div');
+			
+			$label = Widget::Label(__('Expression'));
 			$label->appendChild(Widget::Input(
 				"conditions[{$sortorder}][expression]",
 				General::sanitize($condition['expression'])
@@ -359,14 +411,18 @@
 				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:expression"]);
 			}
 			
-			$wrapper->appendChild($label);
+			$help = new XMLElement('p');
+			$help->setAttribute('class', 'help');
+			$help->setValue(__('Accepts an XPath expression to determine if this condition is met.'));
+			
+			$container->appendChild($label);
+			$container->appendChild($help);
+			$div->appendChild($container);
 			
 		// Page ---------------------------------------------------------------
 			
-			$div = new XMLElement('div');
-			$div->setAttribute('class', 'group');
-			
-			$label = Widget::Label('Page');
+			$container = new XMLElement('div');
+			$label = Widget::Label(__('Page'));
 			$options = array();
 			
 			foreach ($this->_pages as $page) {
@@ -383,11 +439,18 @@
 				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:page"]);
 			}
 			
-			$div->appendChild($label);
+			$help = new XMLElement('p');
+			$help->setAttribute('class', 'help');
+			$help->setValue(__('Choose a page to generate the HTML email.'));
+			
+			$container->appendChild($label);
+			$container->appendChild($help);
+			$div->appendChild($container);
 			
 		// Params -------------------------------------------------------------
 			
-			$label = Widget::Label('Params');
+			$container = new XMLElement('div');
+			$label = Widget::Label(__('URL Parameters'));
 			$label->appendChild(Widget::Input(
 				"conditions[{$sortorder}][params]",
 				General::sanitize($condition['params'])
@@ -397,7 +460,14 @@
 				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:params"]);
 			}
 			
-			$div->appendChild($label);
+			$help = new XMLElement('p');
+			$help->setAttribute('class', 'help');
+			$help->setValue(__('Pass parameter(s) to the page.'));
+			
+			$container->appendChild($label);
+			$container->appendChild($help);
+			$div->appendChild($container);
+			
 			$wrapper->appendChild($div);
 		}
 		

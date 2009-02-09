@@ -329,6 +329,8 @@
 			$div = new XMLElement('div');
 			$div->setAttribute('class', 'group');
 			
+			$standard = new XMLElement('div');
+			
 			$label = Widget::Label(__('Subject'));
 			$label->appendChild(Widget::Input(
 				"conditions[{$sortorder}][subject]",
@@ -339,7 +341,7 @@
 				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:subject"]);
 			}
 			
-			$div->appendChild($label);
+			$standard->appendChild($label);
 			
 		// Sender Name --------------------------------------------------------
 			
@@ -353,13 +355,12 @@
 				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:sender"]);
 			}
 			
-			$div->appendChild($label);
-			$wrapper->appendChild($div);
-			
-			$div = new XMLElement('div');
-			$div->setAttribute('class', 'group');
+			$standard->appendChild($label);
+			$div->appendChild($standard);
 			
 		// Senders ------------------------------------------------------------
+			
+			$standard = new XMLElement('div');
 			
 			$label = Widget::Label(__('Senders'));
 			$label->appendChild(Widget::Input(
@@ -371,7 +372,7 @@
 				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:senders"]);
 			}
 			
-			$div->appendChild($label);
+			$standard->appendChild($label);
 			
 		// Recipients ---------------------------------------------------------
 			
@@ -385,21 +386,21 @@
 				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:recipients"]);
 			}
 			
-			$div->appendChild($label);
-			$wrapper->appendChild($div);
-			
 			$help = new XMLElement('p');
 			$help->setAttribute('class', 'help');
 			$help->setValue(__('To access the entry data, use XPath expressions: <code>{entry/field-one} static text {entry/field-two}</code>.'));
+			
+			$standard->appendChild($label);
+			$div->appendChild($standard);
+			$wrapper->appendChild($div);
 			$wrapper->appendChild($help);
 			
 		// Expression ---------------------------------------------------------
 			
-			$wrapper->appendChild(new XMLElement('h5', __('Technical')));
+			$wrapper->appendChild(new XMLElement('h5', __('Advanced')));
 			
 			$div = new XMLElement('div');
 			$div->setAttribute('class', 'group triple');
-			$container = new XMLElement('div');
 			
 			$label = Widget::Label(__('Expression'));
 			$label->appendChild(Widget::Input(
@@ -411,17 +412,10 @@
 				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:expression"]);
 			}
 			
-			$help = new XMLElement('p');
-			$help->setAttribute('class', 'help');
-			$help->setValue(__('Accepts an XPath expression to determine if this condition is met.'));
-			
-			$container->appendChild($label);
-			$container->appendChild($help);
-			$div->appendChild($container);
+			$div->appendChild($label);
 			
 		// Page ---------------------------------------------------------------
 			
-			$container = new XMLElement('div');
 			$label = Widget::Label(__('Page'));
 			$options = array();
 			
@@ -439,17 +433,10 @@
 				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:page"]);
 			}
 			
-			$help = new XMLElement('p');
-			$help->setAttribute('class', 'help');
-			$help->setValue(__('Choose a page to generate the HTML email.'));
-			
-			$container->appendChild($label);
-			$container->appendChild($help);
-			$div->appendChild($container);
+			$div->appendChild($label);
 			
 		// Params -------------------------------------------------------------
 			
-			$container = new XMLElement('div');
 			$label = Widget::Label(__('URL Parameters'));
 			$label->appendChild(Widget::Input(
 				"conditions[{$sortorder}][params]",
@@ -460,14 +447,7 @@
 				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:params"]);
 			}
 			
-			$help = new XMLElement('p');
-			$help->setAttribute('class', 'help');
-			$help->setValue(__('Pass parameter(s) to the page.'));
-			
-			$container->appendChild($label);
-			$container->appendChild($help);
-			$div->appendChild($container);
-			
+			$div->appendChild($label);
 			$wrapper->appendChild($div);
 		}
 		

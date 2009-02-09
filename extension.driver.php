@@ -481,7 +481,8 @@
 			// Send the email:
 			$return = General::sendEmail(
 				$email['recipients'],  $email['senders'], $email['sender'], $email['subject'], $email['message'], array(
-					'MIME-Version: 1.0', 'Content-Type: text/html; charset=utf-8'
+					'mime-version'	=> '1.0',
+					'content-type'	=> 'text/html; charset="UTF-8"'
 				)
 			);
 			

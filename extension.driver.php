@@ -34,7 +34,8 @@
 				CREATE TABLE IF NOT EXISTS `tbl_etf_templates` (
 					`id` int(11) unsigned NOT NULL auto_increment,
 					`name` varchar(255) NOT NULL,
-					`conditions` int(11) unsigned,
+					`conditions` int(11) unsigned default NULL,
+					`included_fields` text,
 					PRIMARY KEY (`id`)
 				)
 			");
@@ -213,7 +214,7 @@
 						$value = ($value ? 'yes' : 'no');
 					}
 					
-					$child = new XMLElement($key, (string)$value);
+					$child = new XMLElement($key, General::sanitize((string)$value));
 				}
 				
 				$xml->appendChild($child);

@@ -1,6 +1,7 @@
 <?php
-
+	
 	require_once(TOOLKIT . '/class.administrationpage.php');
+	require_once(TOOLKIT . '/class.datasourcemanager.php');
 	
 	class contentExtensionEmailTemplateFilterTemplates extends AdministrationPage {
 		protected $_action = '';
@@ -101,7 +102,7 @@
 		// Save: --------------------------------------------------------------
 			
 			$this->_fields['conditions'] = (integer)count($this->_conditions);
-			$this->_fields['included_fields'] = serialize($this->_fields['included_fields']);
+			$this->_fields['datasources'] = implode(',', $this->_fields['datasources']);
 			
 			$this->_Parent->Database->insert($this->_fields, 'tbl_etf_templates', true);
 			
@@ -221,39 +222,35 @@
 			
 			$fieldset->appendChild($label);
 			
-		// Fields -------------------------------------------------------------
+		// Datasources --------------------------------------------------------
 			
-			$sectionManager = new SectionManager($this->_Parent);
-			$sections = $sectionManager->fetch();
+			$DSManager = new DatasourceManager($this->_Parent);
+			$datasources = $DSManager->listAll();
+			$handles = explode(',', $this->_fields['datasources']);
 			
 			$options = array();
 			
-			foreach ($sections as $section) {
-				$section_id = $section->get('id');
-				$options[$section_id] = array(
-					'label'		=> $section->get('name'),
-					'options'	=> array()
-				);
+			foreach ($datasources as $about) {
+				$handle = $about['handle'];
+				$selected = in_array($handle, $handles);
 				
-				foreach ($section->fetchFields() as $field) {
-					foreach ($field->fetchIncludableElements() as $item) {
-						$id = "{$section_id}/{$item}";
-						$selected = in_array($id, $this->_fields['included_fields']);
-						
-						$options[$section_id]['options'][] = array(
-							$id, $selected, $item
-						);
-					}
-				}
+				$options[] = array(
+					$handle, $selected, $about['name']
+				);
 			}
 			
-			$label = Widget::Label(__('Included Fields'));
+			$label = Widget::Label(__('Datasources'));
 			$label->appendChild(Widget::Select(
-				"fields[included_fields][]", $options,
+				"fields[datasources][]", $options,
 				array('multiple' => 'multiple')
 			));
-			$fieldset->appendChild($label);
 			
+			$help = new XMLElement('p');
+			$help->setAttribute('class', 'help');
+			$help->setValue(__('The parameter <code>%s</code> can be used in the selected datasources to get related data.', array('$etf-entry-id')));
+			
+			$fieldset->appendChild($label);
+			$fieldset->appendChild($help);
 			$this->Form->appendChild($fieldset);
 			
 		// Conditions -------------------------------------------------------------
@@ -388,7 +385,10 @@
 			
 			$help = new XMLElement('p');
 			$help->setAttribute('class', 'help');
-			$help->setValue(__('To access the entry data, use XPath expressions: <code>{entry/field-one} static text {entry/field-two}</code>.'));
+			$help->setValue(__(
+				'To access the entry data, use XPath expressions: <code>%s static text %s</code>.',
+				array('{datasource/entry/field-one}', '{datasource/entry/field-two}')
+			));
 			
 			$standard->appendChild($label);
 			$div->appendChild($standard);

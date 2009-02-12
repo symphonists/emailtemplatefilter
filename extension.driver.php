@@ -9,12 +9,13 @@
 	-------------------------------------------------------------------------*/
 		
 		public static $params = array();
+		public static $page = null;
 		
 		public function about() {
 			return array(
 				'name'			=> 'Filter: Email Template',
-				'version'		=> '1.009',
-				'release-date'	=> '2008-02-09',
+				'version'		=> '1.010',
+				'release-date'	=> '2008-02-12',
 				'author'		=> array(
 					'name'			=> 'Rowan Lewis',
 					'website'		=> 'http://pixelcarnage.com/',
@@ -35,7 +36,7 @@
 					`id` int(11) unsigned NOT NULL auto_increment,
 					`name` varchar(255) NOT NULL,
 					`conditions` int(11) unsigned default NULL,
-					`included_fields` text,
+					`datasources` text default NULL,
 					PRIMARY KEY (`id`)
 				)
 			");
@@ -94,16 +95,15 @@
 					'delegate'	=> 'EventFinalSaveFilter',
 					'callback'	=> 'eventFinalSaveFilter'
 				),
-				/* ManipulatePageParameters is non-standard */
 				array(
 					'page'		=> '/frontend/',
-					'delegate'	=> 'ManipulatePageParameters',
-					'callback'	=> 'getParams'
+					'delegate'	=> 'FrontendPageResolved',
+					'callback'	=> 'setPage'
 				),
 				array(
 					'page'		=> '/frontend/',
 					'delegate'	=> 'FrontendParamsResolve',
-					'callback'	=> 'getParams'
+					'callback'	=> 'setParams'
 				)
 			);
 		}
@@ -127,18 +127,12 @@
 			);
 		}
 		
-		public function getParams($context) {
+		public function setPage($context) {
+			self::$page = $context['page'];
+		}
+		
+		public function setParams($context) {
 			self::$params = $context['params'];
-			return;
-			self::$params = array(
-				'testing'	=> array(
-					'one', 'two'
-				),
-				'test'		=> array(
-					'foo'		=> 'bar',
-					'boo'		=> 'far'
-				)
-			);
 		}
 		
 	/*-------------------------------------------------------------------------
@@ -170,95 +164,6 @@
 			}
 			
 			return $results;
-		}
-		
-		protected function getData($entry_id, $fields) {
-			$entry_xml = $param_xml = null;
-			
-			if (!empty(self::$params)) {
-				$param_xml = new XMLElement('param');
-				$this->getDataParam(self::$params, $param_xml);
-			}
-			
-			if (!empty($entry_id)) {
-				$entry_xml = new XMLElement('entry');
-				$this->getDataEntry($entry_id, $entry_xml, $fields);
-			}
-			
-			if (!empty($param_xml) and !empty($entry_xml)) {
-				$xml = new XMLElement('data');
-				$xml->appendChild($param_xml);
-				$xml->appendChild($entry_xml);
-				
-				$dom = new DOMDocument();
-				$dom->loadXML($xml->generate(true));
-				
-				return $dom;
-			}
-			
-			return null;
-		}
-		
-		protected function getDataParam($params, $xml) {
-			foreach ($params as $key => $value) {
-				if (is_integer($key)) $key = 'item';
-				
-				$key = General::sanitize($key);
-				
-				if (is_array($value)) {
-					$child = new XMLElement($key);
-					$this->getDataParam($value, $child);
-					
-				} else {
-					if (is_bool($value)) {
-						$value = ($value ? 'yes' : 'no');
-					}
-					
-					$child = new XMLElement($key, General::sanitize((string)$value));
-				}
-				
-				$xml->appendChild($child);
-			}
-		}
-		
-		protected function getDataEntry($entry_id, $xml, $fields) {
-			$entryManager = new EntryManager($this->_Parent);
-			$entryManager->setFetchSorting('id', 'ASC');
-			$entries = $entryManager->fetch($entry_id, null, null, null, null, null, false, true);
-			
-			$entry = @$entries[0];
-			$xml->setAttribute('id', $entry->get('id'));
-			
-			$associated = $entry->fetchAllAssociatedEntryCounts();
-			
-			if (is_array($associated) and !empty($associated)) {
-				foreach ($associated as $section => $count) {
-					$handle = $this->_Parent->Database->fetchVar('handle', 0, "
-						SELECT
-							s.handle
-						FROM
-							`tbl_sections` AS s
-						WHERE
-							s.id = '{$section}'
-						LIMIT 1
-					");
-					
-					$xml->setAttribute($handle, (string)$count);
-				}
-			}
-			
-			// Add fields:
-			foreach ($fields as $handle) {
-				list($handle, $mode) = preg_split('/\s*:\s*/', $handle, 2);
-				list($section_id, $handle) = explode('/', $handle);
-				
-				if ($section_id == $entry->get('section_id')) {
-					$field_id = $entryManager->fieldManager->fetchFieldIDFromElementName($handle);
-					$field = $entryManager->fieldManager->fetch($field_id);
-					
-					$field->appendFormattedElement($xml, $entry->getData($field_id), false, $mode);
-				}
-			}
 		}
 		
 		public function countLogs() {
@@ -352,21 +257,15 @@
 		}
 		
 		public function getTemplate($template_id) {
-			$result = $this->_Parent->Database->fetchRow(0, "
+			return $this->_Parent->Database->fetchRow(0, "
 				SELECT
-					t.id, t.name, t.included_fields
+					t.id, t.name, t.datasources
 				FROM
 					`tbl_etf_templates` AS t
 				WHERE
 					t.id = '{$template_id}'
 				LIMIT 1
 			");
-			
-			if (empty($result)) return $result;
-			
-			$result['included_fields'] = @unserialize($result['included_fields']);
-			
-			return $result;
 		}
 		
 	/*-------------------------------------------------------------------------
@@ -397,14 +296,51 @@
 			}
 		}
 		
+		protected function getData($template) {
+			$data = new XMLElement('data');
+			
+			if (!empty(self::$params)) {
+				$params = new XMLElement('param');
+				
+				foreach (self::$params as $key => $value) {
+					if (is_integer($key)) $key = 'item';
+					
+					$key = General::sanitize($key);
+					
+					if (is_array($value)) {
+						$child = new XMLElement($key);
+						$this->getDataParam($value, $child);
+						
+					} else {
+						if (is_bool($value)) {
+							$value = ($value ? 'yes' : 'no');
+						}
+						
+						$child = new XMLElement($key, General::sanitize((string)$value));
+					}
+					
+					$params->appendChild($child);
+				}
+				
+				$data->appendChild($params);
+			}
+			
+			self::$page->__processDatasources($template['datasources'], $data);
+			
+			$dom = new DOMDocument();
+			$dom->loadXML($data->generate(true));
+			
+			return $dom;
+		}
+		
 		public function sendEmail($entry_id, $template_id) {
 			header('content-type: text/plain');
 			
 			$template = $this->getTemplate($template_id);
 			$conditions = $this->getConditions($template_id);
-			$data = $this->getData($entry_id, $template['included_fields']);
+			$data = $this->getData($template);
 			$xpath = new DOMXPath($data);
-			$email = null; $fields = array();
+			$email = null;
 			
 			// Find condition:
 			foreach ($conditions as $condition) {
@@ -419,7 +355,7 @@
 				}
 			}
 			
-			if (empty($email)) return;
+			if (is_null($email)) return;
 			
 			// Replace {xpath} queries:
 			foreach ($email as $key => $value) {
@@ -476,7 +412,7 @@
 			
 			//var_dump($data->saveXML());
 			//var_dump(self::$params);
-			//var_dump($data->saveXML());
+			//var_dump($email);
 			//exit;
 			
 			// Send the email:

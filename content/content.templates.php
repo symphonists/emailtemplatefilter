@@ -123,6 +123,9 @@
 				$template_id = $this->_fields['id'];
 			}
 			
+			// Remove all existing conditions before inserting the remaining ones
+			$this->_Parent->Database->delete('tbl_etf_conditions', " `template_id` = '{$this->_fields['id']}'");
+
 			foreach ($this->_conditions as $condition) {
 				$condition['template_id'] = $template_id;
 				

@@ -95,7 +95,7 @@
 			}
 			
 			if (!empty($this->_errors)) {
-				$this->_valud = false;
+				$this->_valid = false;
 				return;
 			}
 			

@@ -326,11 +326,6 @@
 			
 		// Subject ------------------------------------------------------------
 			
-			$div = new XMLElement('div');
-			$div->setAttribute('class', 'group');
-			
-			$standard = new XMLElement('div');
-			
 			$label = Widget::Label(__('Subject'));
 			$label->appendChild(Widget::Input(
 				"conditions[{$sortorder}][subject]",
@@ -341,7 +336,7 @@
 				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:subject"]);
 			}
 			
-			$standard->appendChild($label);
+			$wrapper->appendChild($label);
 			
 		// Sender Name --------------------------------------------------------
 			
@@ -355,12 +350,9 @@
 				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:sender"]);
 			}
 			
-			$standard->appendChild($label);
-			$div->appendChild($standard);
+			$wrapper->appendChild($label);
 			
 		// Senders ------------------------------------------------------------
-			
-			$standard = new XMLElement('div');
 			
 			$label = Widget::Label(__('Senders'));
 			$label->appendChild(Widget::Input(
@@ -372,7 +364,7 @@
 				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:senders"]);
 			}
 			
-			$standard->appendChild($label);
+			$wrapper->appendChild($label);
 			
 		// Recipients ---------------------------------------------------------
 			
@@ -389,21 +381,16 @@
 			$help = new XMLElement('p');
 			$help->setAttribute('class', 'help');
 			$help->setValue(__(
-				'To access the entry data, use XPath expressions: <code>%s static text %s</code>.',
+				'To access the XML, use XPath expressions: <code>%s static text %s</code>.',
 				array('{datasource/entry/field-one}', '{datasource/entry/field-two}')
 			));
 			
-			$standard->appendChild($label);
-			$div->appendChild($standard);
-			$wrapper->appendChild($div);
+			$wrapper->appendChild($label);
 			$wrapper->appendChild($help);
 			
 		// Expression ---------------------------------------------------------
 			
 			$wrapper->appendChild(new XMLElement('h5', __('Advanced')));
-			
-			$div = new XMLElement('div');
-			$div->setAttribute('class', 'group triple');
 			
 			$label = Widget::Label(__('Expression'));
 			$label->appendChild(Widget::Input(
@@ -415,9 +402,12 @@
 				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:expression"]);
 			}
 			
-			$div->appendChild($label);
+			$wrapper->appendChild($label);
 			
 		// Page ---------------------------------------------------------------
+			
+			$div = new XMLElement('div');
+			$div->setAttribute('class', 'group');
 			
 			$label = Widget::Label(__('Page'));
 			$options = array();

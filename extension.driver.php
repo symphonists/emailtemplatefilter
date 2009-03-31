@@ -14,7 +14,7 @@
 		public function about() {
 			return array(
 				'name'			=> 'Filter: Email Template',
-				'version'		=> '1.0.11',
+				'version'		=> '1.0.12',
 				'release-date'	=> '2008-03-31',
 				'author'		=> array(
 					'name'			=> 'Rowan Lewis',
@@ -296,7 +296,7 @@
 			}
 		}
 		
-		protected function getData($template) {
+		protected function getData($template, $entry_id) {
 			$data = new XMLElement('data');
 			
 			if (!empty(self::$params)) {
@@ -325,7 +325,9 @@
 				$data->appendChild($params);
 			}
 			
-			self::$page->__processDatasources($template['datasources'], $data);
+			self::$page->__processDatasources($template['datasources'], $data, array(
+				'etf-entry-id'	=> $entry_id
+			));
 			
 			$dom = new DOMDocument();
 			$dom->loadXML($data->generate(true));
@@ -338,7 +340,7 @@
 			
 			$template = $this->getTemplate($template_id);
 			$conditions = $this->getConditions($template_id);
-			$data = $this->getData($template);
+			$data = $this->getData($template, $entry_id);
 			$xpath = new DOMXPath($data);
 			$email = null;
 			
@@ -351,6 +353,12 @@
 				$results = $xpath->query($condition['expression']);
 				
 				if ($results->length > 0) {
+					/*
+					foreach ($results as $node) {
+						var_dump($data->saveXML($node));
+					}
+					*/
+					
 					$email = $condition; break;
 				}
 			}
@@ -410,10 +418,12 @@
 			unset($email['params']);
 			unset($email['generator']);
 			
-			//var_dump($data->saveXML());
-			//var_dump(self::$params);
-			//var_dump($email);
-			//exit;
+			/*
+			var_dump($data->saveXML());
+			var_dump(self::$params);
+			var_dump($email);
+			exit;
+			*/
 			
 			// Send the email:
 			$return = General::sendEmail(

@@ -1,0 +1,246 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<title>Getting Started with Email Template Filters</title>
+<meta http-equiv="content-type" content="text/html;charset=utf-8">
+<link rel="stylesheet" type="text/css" media="screen" href="./styles/reset.css">
+<link rel="stylesheet" type="text/css" media="screen" href="./styles/common.css">
+<div id="layout">
+	<h1>Getting Started with Email Template Filters</h1>
+	<div class="blurb">
+		<p>
+			In this tutorial I'll guide you through setting up Email Template Filters
+			and show you some cool tricks along the way.
+		</p>
+		<p>
+			I will assume you already have some knowledge of how to use Symphony, namely,
+			how to create pages, events and datasources, but also some other little bits.
+		</p>
+	</div>
+	
+	<div class="section">
+		<h2>The plan</h2>
+		<p>
+			So, what are we going to do with it? Well, I was <em>kinda</em> thinking, <em>kinda</em>,
+			that we'd do something that is fairly common and create a contact form suitable for
+			a large company; <em>&#x201c;Generic Placeholder Manufacturing&#x201d;</em> or GPM for short.
+		</p>
+		<p>
+			As with any client, GPM has requirements, today they want a large pineapple and a stack
+			of chocolate coated, deep fried elephants, but thankfully tomorrow we <em>think</em> we
+			know that they'll want a form that:
+		</p>
+		<ul>
+			<li>Allows their potential clients or existing members to contact them</li>
+			<li>Is sent to different addresses depending on the visitors choice</li>
+			<li>Is sent to different offices depending on the visitors choice.</li>
+		</ul>
+		<p>
+			You're probably thinking that's quite a tall order, and not something you can easily
+			create in Symphony, fortunately it is <em>quite</em> easy.
+		</p>
+		<p>
+			Basically what we'll be doing is creating a Symphony page, attaching a couple of datasources
+			to it, then emailing its output across the internet.
+		</p>
+		<p>
+			So, what are you waiting for? <em>Get to it!</em>
+		</p>
+	</div>
+	
+	<div class="section">
+		<h2>Building it</h2>
+		<h3>Creating sections</h3>
+		<p>
+			The first thing we need to do is create two new sections, one that we'll call
+			<em>&#x201c;Office Locations&#x201d;</em>, it'll store information regarding GPMs offices
+			and the different available email addresses, the second we'll call
+			<em>&#x201c;Contact Submissions&#x201d;</em>, which will store any data from the contact form.
+		</p>
+		<p>
+			Create the <em>&#x201c;Office Locations&#x201d;</em> section with these fields:
+		</p>
+		<dl>
+			<dt>Location</dt>
+			<dd>The location of the office, any text input type field should do quite nicely.</dd>
+			<dt>General Enquiry Email</dt>
+			<dd>The email address to use for general enquiries.</dd>
+			<dt>Member Enquiry Email</dt>
+			<dd>The email address to use for general enquiries, a text input with email validation is best for both.</dd>
+			<dt>Contact Submissions</dt>
+			<dd>A Bi-Link field pointing at the section of the same&#160;name.</dd>
+		</dl>
+		<p>
+			And the <em>&#x201c;Contact Submissions&#x201d;</em> section with these fields:
+		</p>
+		<dl>
+			<dt>First Name</dt>
+			<dd>A text input will do the trick.</dd>
+			<dt>Last Name</dt>
+			<dd>Another text input.</dd>
+			<dt>Email</dt>
+			<dd>Just like the email addresses above.</dd>
+			<dt>Type</dt>
+			<dd>A select box with two choices: <em>&#x201c;General&#x201d;</em> or <em>&#x201c;Member&#x201d;</em></dd>
+			<dt>Message</dt>
+			<dd>A textarea, with a formatter of some kind or you'll run the risk of user input breaking your email.</dd>
+			<dt>Office Location</dt>
+			<dd>A Bi-Link field pointing at the section of the same&#160;name.</dd>
+		</dl>
+		
+		<h3>Dummy copy time</h3>
+		<p>
+			Now would be a good time to enter some test data into your sections, for example, here's my
+			<em>&#x201c;Office Locations&#x201d;</em> section:
+		</p>
+		<div class="image">
+			<img src="./images/section-office-locations-index.png" alt="">
+		</div>
+		<p>
+			And here's my <em>&#x201c;Contact Submissions&#x201d;</em> section:
+		</p>
+		<div class="image">
+			<img src="./images/section-contact-submissions-index.png" alt="">
+		</div>
+		<p>
+			You can enter more if you like, but we only really need a couple of each.
+		</p>
+		
+		<h3>Creating the datasource</h3>
+		<p>
+			Now we need a datasource to retrieve an entry from the <em>&#x201c;Contact Submissions&#x201d;</em>
+			section, lets call it: <em>&#x201c;Content Submission by Id&#x201d;</em>. It's purpose, is to fetch
+			just <em>one</em> entry from the <em>&#x201c;Content Submissions&#x201d;</em> section.
+		</p>
+		<div class="image">
+			<img src="./images/create-datasource.png" alt="">
+		</div>
+		<p>
+			A few things you should definitely note:
+		</p>
+		<ol>
+			<li>We're filtering by <code>$etf-entry-id</code>, it is a special parameter that is populated by
+				the event we create in a few steps, don't forget to include it</li>
+			<li>The other parameter that we're filtering with, <code>$entry-id</code>, is created in the next step</li>
+			<li>In the included elements, only one (<code>office-location: entries</code>) of the two
+				<code>office-location</code> items is selected. Because we used the Bi-Link field to link
+				our two sections together, having this item selected means we have access to the linked
+				entry without needing a second datasource.</li>
+		</ol>
+		
+		<h3>Creating the email page</h3>
+		<p>
+			We need to create a new Symphony page, it will have one purpose, to provide the HTML
+			that you want to send to the client:
+		</p>
+		<div class="image">
+			<img src="./images/create-email-page.png" alt="">
+		</div>
+		<p>
+			As you can see, I've attached the datasource we created in the previous step to this page,
+			and also defined that <code>$entry-id</code> parameter that is uses. The parameter assures
+			that we pull the correct entry from the datasource.
+		</p>
+		<p>
+			When the page is ready take a look at <code>{$root}/email-contact-details/{$entry-id}/?debug</code>
+			and examine the XML, here's an excerpt from mine:
+		</p>
+		<pre>&lt;entry id=&quot;5&quot;&gt;
+    &lt;office-location mode=&quot;entries&quot; entries=&quot;1&quot;&gt;
+        &lt;section id=&quot;4&quot; handle=&quot;office-locations&quot;&gt;Office Locations&lt;/section&gt;
+        &lt;entry id=&quot;3&quot;&gt;
+            &lt;location handle=&quot;brisbane&quot;&gt;Brisbane&lt;/location&gt;
+            &lt;general-enquiry-email&gt;general@brisbane...&lt;/general-enquiry-email&gt;
+            &lt;member-enquiry-email&gt;member@brisbane...&lt;/member-enquiry-email&gt;
+        &lt;/entry&gt;
+    &lt;/office-location&gt;
+    &lt;first-name handle=&quot;john&quot;&gt;John&lt;/first-name&gt;
+    &lt;last-name handle=&quot;doe&quot;&gt;Doe&lt;/last-name&gt;
+    &lt;email handle=&quot;john-examplecom&quot;&gt;john@example.com&lt;/email&gt;
+    &lt;type&gt;
+        &lt;item handle="general">General&lt;/item&gt;
+    &lt;/type&gt;
+    &lt;message word-count=&quot;2&quot;&gt;&lt;p&gt;Hi everybody!&lt;/p&gt;&lt;/message&gt;
+&lt;/entry&gt;</pre>
+		<p>
+			You should take some time to make the page output the HTML you want to be sent, how you do
+			this really is up to you, treat it as a normal Symphony page, because that's what it&#160;is,
+			the Email Template Filter extension doesn't care as long as it exists.
+		</p>
+		
+		<h3>Creating the template</h3>
+		<p>
+			Now comes the <em>groovy</em> part, we need to create a new template. Take yourself to the
+			<em>&#x201c;Emails &#x2013; Templates&#x201d;</em> page and click the <em>Create New</em> button.
+		</p>
+		<p>
+			Fill in the top section of the page, again selecting the datasource we created, like so:
+		</p>
+		<div class="image">
+			<img src="./images/create-template-one.png" alt="">
+		</div>
+		<p>
+			Next up, conditions. Each condition hangs on its expression, an XPath that tests against the
+			XML output from the selected datasources. The first condition with an expression that doesn't
+			evaluate to <code>false</code>, or with an expression that is left empty, will be used, any
+			conditions afterwards will be ignored.
+		</p>
+		<p>
+			Each condition also has a range of fields for the subject, sender name, address to send from,
+			and addresses to send to (comma delimited). Each of these fields can accept XPath expressions
+			wrapped in curly braces, for example: <code>{datasource/entry/@id}</code>.
+		</p>
+		<p>
+			Now, time to actually our first condition, like so:
+		</p>
+		<div class="image">
+			<img src="./images/create-template-two.png" alt="">
+		</div>
+		<p>
+			Above we're using the expression field to limit the condition to entries intended for the
+			<em>&#x201c;General Enquiry&#x201d;</em> address. To target the <em>&#x201c;Member Enquiry&#x201d;</em>
+			address, simply create a new condition, but change the expression to match <code>member</code>
+			instead of <code>general</code>.
+		</p>
+		<p>
+			We've also selected the page we created above and in the URL parameters we've placed an
+			expression to get the id of the entry. This will be read by the page and set as the value
+			of the <code>$entry-id</code> parameter, which in turn is used by the datasource.
+		</p>
+		
+		<h3>Create the event</h3>
+		<p>
+			Now, what we need is an event, because what the Email Template Filter extension does is
+			make the template we created above into an event filter.
+		</p>
+		<p>
+			So create an event for the <em>&#x201c;Content Submissions&#x201d;</em> section, selecting
+			the appropriate filter:
+		</p>
+		<div class="image">
+			<img src="./images/create-event.png" alt="">
+		</div>
+		<p>
+			Obviously this event needs to be attached to a page somewhere that has a form, so go ahead,
+			copy the example form provided by the event into a new page. After doing that, you should
+			be ready to send your first enquiry email.
+		</p>
+	</div>
+	
+	<div class="section">
+		<h2>Conclusion</h2>
+		<p>
+			The Email Template Filter extension provides you with some unique advantages that you
+			simply don't get with the standard <em>&#x201c;Send Email&#x201d;</em> filter, for example:
+		</p>
+		<ul>
+			<li>The form can't be hijacked to send email to <em>whoever</em> the hijacker wants</li>
+			<li>You don't have to edit your XSLT to change the basics on the email, meaning
+				a copy editor could tweak the templates to their liking, if you trust them</li>
+			<li>You've got the ability to easily debug the contents of the email.</li>
+		</ul>
+		<p>
+			That's not to say that it's some pinnacle of perfection, there probably are problems,
+			and there probably are things that could be done better, so please give your feedback
+			not only on the extension itself, but also this tutorial. 
+		</p>
+	</div>
+</div>

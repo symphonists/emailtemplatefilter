@@ -1,0 +1,153 @@
+/*---------------------------------------------------------------------------------
+	Layout
+---------------------------------------------------------------------------------*/
+	
+	#layout {
+		color: #666666;
+		margin: 0 auto;
+		padding: 40px 20px;
+		width: 684px;
+	}
+	
+/*---------------------------------------------------------------------------------
+	Copy
+---------------------------------------------------------------------------------*/
+	
+	abbr {
+		font-style: italic;
+	}
+	
+	h1 {
+		color: #444444;
+		font-size: 1.5em;
+		font-weight: normal;
+		margin: 0 0 20px 0;
+	}
+	h2 {
+		color: #444444;
+		font-size: 1.2em;
+		font-weight: normal;
+		margin: 20px 0;
+		position: relative;
+	}
+	h3 {
+		color: #444444;
+		font-size: 1em;
+		font-weight: normal;
+		margin: 20px 0 10px 0;
+		position: relative;
+	}
+	h4 {
+		color: #444444;
+		font-size: 1em;
+		font-weight: normal;
+		margin: 20px 0 10px 0;
+	}
+	
+	code {
+		color: #888888;
+		font-size: 0.9em;
+		font-family: 'andale mono', 'monaco', 'bitstream vera sans mono', serif;
+	}
+	
+	dl {
+		margin: 15px 0 20px 0;
+		overflow: hidden;
+		padding: 0 0 0 2.5em;
+	}
+	dl dt {
+		color: #444444;
+		clear: both;
+		float: left;
+		margin: 5px 0 0 0;
+		width: 13em;
+	}
+	dl dt:after {
+		content: ':';
+	}
+	dl dd {
+		margin: 5px 0 0 13.5em;
+	}
+	
+	ol,
+	ul {
+		counter-reset: items;
+		list-style: none;
+		margin: 15px 0;
+		overflow: hidden;
+	}
+	ol li,
+	ul li {
+		margin: 5px 0;
+		padding: 0 0 0 2.5em;
+	}
+	dl dt:before,
+	ol li:before,
+	ul li:before {
+		color: #999999;
+		display: inline-block;
+		margin: 0 0.5em 0 -2.5em;
+		text-align: right;
+		width: 2em;
+	}
+	ol li:before {
+		counter-increment: items;
+		content: counter(items) '.';
+	}
+	dl dt:before,
+	ul li:before {
+		content: '\002013';
+	}
+	
+	p {
+		margin: 10px 0;
+	}
+	
+	.blurb {
+		font-style: italic;
+	}
+	
+	.section {
+		border-top: 1px solid #eeeeee;
+		counter-increment: sections;
+		margin: 40px -40px 0 -40px;
+		padding: 20px 40px 0 40px;
+	}
+	.section h2:first-child:before {
+		color: #888888;
+		content: counter(sections) '.';
+		margin: 0 1ex 0 0;
+	}
+	.section h3 {
+		counter-increment: sub-sections;
+	}
+	.section h3:before {
+		color: #888888;
+		content: counter(sections) '.' counter(sub-sections) '.';
+		margin: 0 1ex 0 0;
+	}
+	
+	.image {
+		background: #f6f6f6;
+		border: 1px solid #ffffff;
+		margin: 20px -20px;
+		outline: 1px solid #dddddd;
+		text-align: center;
+	}
+	.image img {
+		display: block;
+	}
+	
+	pre {
+		background: #f6f6f6;
+		border: 1px solid #ffffff;
+		color: #888888;
+		font-size: 0.8em;
+		font-family: 'andale mono', 'monaco', 'bitstream vera sans mono', serif;
+		margin: 20px -20px;
+		outline: 1px solid #dddddd;
+		overflow: hidden;
+		padding: 20px;
+	}
+	
+/*-------------------------------------------------------------------------------*/

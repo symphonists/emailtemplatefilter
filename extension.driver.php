@@ -5,7 +5,7 @@
 	
 	class Extension_EmailTemplateFilter extends Extension {
 	/*-------------------------------------------------------------------------
-		Extension definition
+		Definition:
 	-------------------------------------------------------------------------*/
 		
 		public static $params = array();
@@ -14,8 +14,8 @@
 		public function about() {
 			return array(
 				'name'			=> 'Filter: Email Template',
-				'version'		=> '1.010',
-				'release-date'	=> '2008-02-12',
+				'version'		=> '1.0.11',
+				'release-date'	=> '2008-03-31',
 				'author'		=> array(
 					'name'			=> 'Rowan Lewis',
 					'website'		=> 'http://pixelcarnage.com/',

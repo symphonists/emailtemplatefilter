@@ -12,7 +12,7 @@ Installation
 
 1.	Edit `symphony/lib/toolkit/class.frontendpage.php` and change line 416 to:
 	
-	private function __processDatasources($datasources, &$wrapper) {
+	public function __processDatasources($datasources, &$wrapper) {
 	
 2.	Upload the 'emailtemplatefilter' folder in this archive to your Symphony
 	'extensions' folder.

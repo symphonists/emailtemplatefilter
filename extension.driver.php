@@ -14,8 +14,8 @@
 		public function about() {
 			return array(
 				'name'			=> 'Filter: Email Template',
-				'version'		=> '1.0.12',
-				'release-date'	=> '2008-03-31',
+				'version'		=> '1.0.13',
+				'release-date'	=> '2008-04-01',
 				'author'		=> array(
 					'name'			=> 'Rowan Lewis',
 					'website'		=> 'http://pixelcarnage.com/',

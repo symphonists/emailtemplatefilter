@@ -1,9 +1,9 @@
 Filter: Email Template
 -------------------------------------------------------------------------------
 
-Version: 1.0.13
+Version: 1.0.14
 Author: Rowan Lewis <rowan@pixelcarnage.com>
-Build Date: 1 April 2009
+Build Date: 30 June 2009
 Requirements: Symphony 2.0.1
 
 

@@ -418,12 +418,10 @@
 			unset($email['params']);
 			unset($email['generator']);
 			
-			/*
-			var_dump($data->saveXML());
-			var_dump(self::$params);
-			var_dump($email);
-			exit;
-			*/
+			//var_dump($data->saveXML());
+			//var_dump(self::$params);
+			//var_dump($email);
+			//exit;
 			
 			// Send the email:
 			$return = General::sendEmail(

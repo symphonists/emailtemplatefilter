@@ -69,28 +69,28 @@
 		// Validate: ----------------------------------------------------------
 			
 			if (empty($this->_fields['name'])) {
-				$this->_errors['name'] = 'Name must not be empty.';
+				$this->_errors['name'] = __('Name must not be empty.');
 			}
 			
 			foreach ($this->_conditions as $sortorder => $condition) {
 				if (empty($condition['subject'])) {
-					$this->_errors["{$sortorder}:subject"] = 'Subject must not be empty.';
+					$this->_errors["{$sortorder}:subject"] = __('Subject must not be empty.');
 				}
 				
 				if (empty($condition['sender'])) {
-					$this->_errors["{$sortorder}:sender"] = 'Sender Name must not be empty.';
+					$this->_errors["{$sortorder}:sender"] = __('Sender Name must not be empty.');
 				}
 				
 				if (empty($condition['senders'])) {
-					$this->_errors["{$sortorder}:senders"] = 'Senders must not be empty.';
+					$this->_errors["{$sortorder}:senders"] = __('Senders must not be empty.');
 				}
 				
 				if (empty($condition['recipients'])) {
-					$this->_errors["{$sortorder}:recipients"] = 'Recipients must not be empty.';
+					$this->_errors["{$sortorder}:recipients"] = __('Recipients must not be empty.');
 				}
 				
 				if (empty($condition['page'])) {
-					$this->_errors["{$sortorder}:page"] = 'Page must not be empty.';
+					$this->_errors["{$sortorder}:page"] = __('Page must not be empty.');
 				}
 			}
 			
@@ -144,9 +144,8 @@
 			
 		// Status: -----------------------------------------------------------
 			
-			if (!$this->_valid) $this->pageAlert('
-				An error occurred while processing this form.
-				<a href="#error">See below for details.</a>',
+			if (!$this->_valid) $this->pageAlert(
+				__('An error occurred while processing this form. <a href="#error">See below for details.</a>'),
 				Alert::ERROR
 			);
 			
@@ -196,11 +195,11 @@
 		// Header: ------------------------------------------------------------
 			
 			$this->setPageType('form');
-			$this->setTitle('Symphony &ndash; Email Templates' . (
+			$this->setTitle(__('Symphony &ndash; Email Templates') . (
 				$this->_editing ? ' &ndash; ' . $this->_fields['name'] : null
 			));
 			$this->appendSubheading("<a href=\"{$this->_uri}/templates/\">Templates</a> &mdash; " . (
-				$this->_editing ? $this->_fields['name'] : 'Untitled'
+				$this->_editing ? $this->_fields['name'] : __('Untitled')
 			));
 			
 		// Form: --------------------------------------------------------------
@@ -281,7 +280,7 @@
 			$wrapper->setAttribute('class', 'template');
 			
 			$this->displayCondition($wrapper, '-1', array(
-				'type'		=> 'XPath Condition'
+				'type'		=> __('XPath Condition')
 			));
 			
 			$ol->appendChild($wrapper);
@@ -296,7 +295,7 @@
 			$div->setAttribute('class', 'actions');
 			$div->appendChild(
 				Widget::Input('action[save]',
-					($this->_editing ? 'Save Changes' : 'Create Template'),
+					($this->_editing ? __('Save Changes') : __('Create Template')),
 					'submit', array(
 						'accesskey'		=> 's'
 					)
@@ -308,7 +307,7 @@
 				$button->setAttributeArray(array(
 					'name'		=> 'action[delete]',
 					'class'		=> 'confirm delete',
-					'title'		=> 'Delete this template'
+					'title'		=> __('Delete this template')
 				));
 				$div->appendChild($button);
 			}
@@ -478,16 +477,16 @@
 		
 		public function __viewIndex() {
 			$this->setPageType('table');
-			$this->setTitle('Symphony &ndash; Email Templates');
+			$this->setTitle(__('Symphony &ndash; Email Templates'));
 			
 			$this->appendSubheading('Templates', Widget::Anchor(
-				'Create New', "{$this->_uri}/templates/new/",
-				'Create a new email template', 'create button'
+				__('Create New'), "{$this->_uri}/templates/new/",
+				__('Create a new email template'), 'create button'
 			));
 			
 			$tableHead = array(
-				array('Template Name', 'col'),
-				array('Conditions', 'col')
+				array(__('Template Name'), 'col'),
+				array(__('Conditions'), 'col')
 			);	
 			
 			$tableBody = array();
@@ -531,12 +530,12 @@
 			$actions->setAttribute('class', 'actions');
 			
 			$options = array(
-				array(null, false, 'With Selected...'),
+				array(null, false, __('With Selected...')),
 				array('delete', false, 'Delete')									
 			);
 
 			$actions->appendChild(Widget::Select('with-selected', $options));
-			$actions->appendChild(Widget::Input('action[apply]', 'Apply', 'submit'));
+			$actions->appendChild(Widget::Input('action[apply]', __('Apply'), 'submit'));
 			
 			$this->Form->appendChild($actions);		
 		}

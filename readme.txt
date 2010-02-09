@@ -1,18 +1,14 @@
-Filter: Email Template
--------------------------------------------------------------------------------
+# Filter: Email Template
 
-Version: 1.0.14
-Author: Rowan Lewis <rowan@pixelcarnage.com>
-Build Date: 30 June 2009
-Requirements: Symphony 2.0.1
+__Version:__ 1.0.14  
+__Author:__ Rowan Lewis <rowan@pixelcarnage.com>  
+__Build Date:__ 30 June 2009  
+__Requirements:__ Symphony 2.0.1  
 
+## Installation
 
-Installation
--------------------------------------------------------------------------------
+1.	Edit `symphony/lib/toolkit/class.frontendpage.php` and replace the function on 416 with this:
 
-1.	Edit `symphony/lib/toolkit/class.frontendpage.php` and replace the function
-	on 416 with this:
-	
 		public function __processDatasources($datasources, &$wrapper, $params = array()) {
 			if (trim($datasources) == '') return;
 			
@@ -57,11 +53,9 @@ Installation
 				unset($ds);
 			}
 		}
+
+2.	Upload the 'emailtemplatefilter' folder in this archive to your Symphony 'extensions' folder.
 	
-2.	Upload the 'emailtemplatefilter' folder in this archive to your Symphony
-	'extensions' folder.
-	
-3.	Enable it by selecting the "Filter: Email Template", choose Enable from the
-	with-selected menu, then click Apply.
-	
+3.	Enable it by selecting the "Filter: Email Template", choose Enable from the	with-selected menu, then click Apply.
+
 4.	Add your email templates, and attach them to your events.

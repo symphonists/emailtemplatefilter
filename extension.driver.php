@@ -14,8 +14,8 @@
 		public function about() {
 			return array(
 				'name'			=> 'Filter: Email Template',
-				'version'		=> '1.0.13',
-				'release-date'	=> '2008-04-01',
+				'version'		=> '1.0.14',
+				'release-date'	=> '2009-06-30',
 				'author'		=> array(
 					'name'			=> 'Rowan Lewis',
 					'website'		=> 'http://pixelcarnage.com/',
@@ -325,7 +325,7 @@
 				$data->appendChild($params);
 			}
 			
-			self::$page->__processDatasources($template['datasources'], $data, array(
+			self::$page->processDatasources($template['datasources'], $data, array(
 				'etf-entry-id'	=> $entry_id
 			));
 			

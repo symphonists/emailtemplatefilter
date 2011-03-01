@@ -537,6 +537,7 @@
 				Widget::TableHead($tableHead), null, 
 				Widget::TableBody($tableBody)
 			);
+			$table->setAttribute('class', 'selectable');
 			
 			$this->Form->appendChild($table);
 			

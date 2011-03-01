@@ -31,7 +31,11 @@
 		}
 		
 		public function __actionIndex() {
-			$checked = @array_keys($_POST['items']);
+			$checked = (
+				(isset($_POST['items']) && is_array($_POST['items']))
+					? @array_keys($_POST['items'])
+					: null
+			);
 			
 			if (is_array($checked) and !empty($checked)) {
 				switch ($_POST['with-selected']) {
@@ -83,106 +87,113 @@
 				$tableBody = array(
 					Widget::TableRow(array(Widget::TableData(__('None Found.'), 'inactive', null, count($tableHead))))
 				);
+			}
+			
+			else foreach ($logs as $log) {
+				extract($log, EXTR_PREFIX_ALL, 'log');
 				
-			} else {
-				foreach ($logs as $log) {
-					extract($log, EXTR_PREFIX_ALL, 'log');
-					
-					$col_date = Widget::TableData(
-						Widget::Anchor(
-							DateTimeObj::get(__SYM_DATETIME_FORMAT__, strtotime($log_date)),
-							URL . "/symphony/extension/emailtemplatefilter/logs/preview/{$log_id}/"
-						)
+				$col_date = Widget::TableData(
+					Widget::Anchor(
+						DateTimeObj::get(__SYM_DATETIME_FORMAT__, strtotime($log_date)),
+						URL . "/symphony/extension/emailtemplatefilter/logs/preview/{$log_id}/"
+					)
+				);
+				$col_date->appendChild(Widget::Input("items[{$log_id}]", null, 'checkbox'));
+				
+				if (!empty($log_subject)) {
+					$col_subject = Widget::TableData(
+						General::sanitize($log_subject)
 					);
-					$col_date->appendChild(Widget::Input("items[{$log_id}]", null, 'checkbox'));
-					
-					if (!empty($log_subject)) {
-						$col_subject = Widget::TableData(
-							General::sanitize($log_subject)
-						);
-						
-					} else {
-						$col_subject = Widget::TableData('None', 'inactive');
-					}
-					
-					if (!empty($log_sender)) {
-						$col_sender = Widget::TableData(
-							General::sanitize($log_sender)
-						);
-						
-					} else {
-						$col_sender = Widget::TableData('None', 'inactive');
-					}
-					
-					if (!empty($log_senders)) {
-						$col_senders = Widget::TableData(
-							General::sanitize($log_senders)
-						);
-						
-					} else {
-						$col_senders = Widget::TableData('None', 'inactive');
-					}
-					
-					if (!empty($log_recipients)) {
-						$col_recipients = Widget::TableData(
-							General::sanitize($log_recipients)
-						);
-						
-					} else {
-						$col_recipients = Widget::TableData('None', 'inactive');
-					}
-					
-					if ($template = $this->_driver->getTemplate($log_template_id)) {
-						$col_template = Widget::TableData(
-							Widget::Anchor(
-								General::sanitize($template['name']),
-								URL . "/symphony/extension/emailtemplatefilter/templates/edit/{$log_template_id}/"
-							)
-						);
-					} else {
-						$col_template = Widget::TableData('None', 'inactive');
-					}
-					
-					$entries = $entryManager->fetch($log_entry_id, null, null, null, null, null, false, true);
-					
-					if (!empty($entries) and $entry = $entries[0]) {
-						$section_id = $entry->_fields['section_id'];
-						$section = $sectionManager->fetch($section_id);
-						$column = array_shift($section->fetchVisibleColumns());
-						
-						$data = $entry->getData($column->get('id'));
-						$link = Widget::Anchor('None', URL . '/symphony/publish/' . $section->get('handle') . '/edit/' . $entry->get('id') . '/', $entry->get('id'), 'content');
-						
-						/*
-						$col_section = Widget::TableData(
-							Widget::Anchor(
-								General::sanitize($section->get('name')),
-								URL . '/symphony/publish/' . $section->get('handle') . '/'
-							)
-						);
-						*/
-						
-						$col_entry = Widget::TableData($column->prepareTableValue($data, $link));
-						
-					} else {
-						//$col_section = Widget::TableData('None', 'inactive');
-						$col_entry = Widget::TableData('None', 'inactive');
-					}
-					
-					$tableBody[] = Widget::TableRow(
-						array(
-							$col_date, $col_subject, $col_sender,
-							$col_senders, $col_recipients,
-							$col_template, $col_entry
+				}
+				
+				else {
+					$col_subject = Widget::TableData('None', 'inactive');
+				}
+				
+				if (!empty($log_sender)) {
+					$col_sender = Widget::TableData(
+						General::sanitize($log_sender)
+					);
+				}
+				
+				else {
+					$col_sender = Widget::TableData('None', 'inactive');
+				}
+				
+				if (!empty($log_senders)) {
+					$col_senders = Widget::TableData(
+						General::sanitize($log_senders)
+					);
+				}
+				
+				else {
+					$col_senders = Widget::TableData('None', 'inactive');
+				}
+				
+				if (!empty($log_recipients)) {
+					$col_recipients = Widget::TableData(
+						General::sanitize($log_recipients)
+					);
+				}
+				
+				else {
+					$col_recipients = Widget::TableData('None', 'inactive');
+				}
+				
+				if ($template = $this->_driver->getTemplate($log_template_id)) {
+					$col_template = Widget::TableData(
+						Widget::Anchor(
+							General::sanitize($template['name']),
+							URL . "/symphony/extension/emailtemplatefilter/templates/edit/{$log_template_id}/"
 						)
 					);
 				}
+				
+				else {
+					$col_template = Widget::TableData('None', 'inactive');
+				}
+				
+				$entries = $entryManager->fetch($log_entry_id, null, null, null, null, null, false, true);
+				
+				if (!empty($entries) and $entry = $entries[0]) {
+					$section_id = $entry->get('section_id');
+					$section = $sectionManager->fetch($section_id);
+					$column = array_shift($section->fetchVisibleColumns());
+					
+					$data = $entry->getData($column->get('id'));
+					$link = Widget::Anchor('None', URL . '/symphony/publish/' . $section->get('handle') . '/edit/' . $entry->get('id') . '/', $entry->get('id'), 'content');
+					
+					/*
+					$col_section = Widget::TableData(
+						Widget::Anchor(
+							General::sanitize($section->get('name')),
+							URL . '/symphony/publish/' . $section->get('handle') . '/'
+						)
+					);
+					*/
+					
+					$col_entry = Widget::TableData($column->prepareTableValue($data, $link));
+				}
+				
+				else {
+					//$col_section = Widget::TableData('None', 'inactive');
+					$col_entry = Widget::TableData('None', 'inactive');
+				}
+				
+				$tableBody[] = Widget::TableRow(
+					array(
+						$col_date, $col_subject, $col_sender,
+						$col_senders, $col_recipients,
+						$col_template, $col_entry
+					)
+				);
 			}
 			
 			$table = Widget::Table(
 				Widget::TableHead($tableHead), null, 
 				Widget::TableBody($tableBody)
 			);
+			$table->setAttribute('class', 'selectable');
 			
 			$this->Form->appendChild($table);
 			
@@ -211,8 +222,9 @@
 					$li->appendChild(
 						Widget::Anchor('First', Symphony::Engine()->getCurrentPageURL() . '?pg=1')
 					);
-					
-				} else {
+				}
+				
+				else {
 					$li->setValue('First');
 				}
 				
@@ -225,8 +237,9 @@
 					$li->appendChild(
 						Widget::Anchor('&larr; Previous', Symphony::Engine()->getCurrentPageURL(). '?pg=' . ($page - 1))
 					);
-					
-				} else {
+				}
+				
+				else {
 					$li->setValue('&larr; Previous');
 				}
 				
@@ -246,8 +259,9 @@
 					$li->appendChild(
 						Widget::Anchor('Next &rarr;', Symphony::Engine()->getCurrentPageURL(). '?pg=' . ($page + 1))
 					);
-					
-				} else {
+				}
+				
+				else {
 					$li->setValue('Next &rarr;');
 				}
 				
@@ -260,8 +274,9 @@
 					$li->appendChild(
 						Widget::Anchor('Last', Symphony::Engine()->getCurrentPageURL(). '?pg=' . $pages)
 					);
-					
-				} else {
+				}
+				
+				else {
 					$li->setValue('Last');
 				}
 				

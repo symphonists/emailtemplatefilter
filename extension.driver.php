@@ -397,10 +397,10 @@
 			$generator .= '/' . $page->handle;
 			$generator = rtrim($generator, '/');
 			$params = trim($email['params'], '/');
-			$email['generator'] = "{$generator}/{$params}/";
+			$generator = "{$generator}/{$params}/";
 			
 			// Add values:
-			$email['message'] = (string)file_get_contents($email['generator']);
+			$email['message'] = (string)file_get_contents($generator);
 			$email['condition_id'] = $email['id'];
 			$email['entry_id'] = $entry_id;
 			
@@ -411,23 +411,30 @@
 			unset($email['sortorder']);
 			unset($email['page']);
 			unset($email['params']);
-			unset($email['generator']);
 			
-			//var_dump($data->saveXML());
-			//var_dump(self::$params);
-			//var_dump($email);
-			//exit;
+			$send = Email::create();
+			$success = false;
 			
-			// Send the email:
-			$return = General::sendEmail(
-				$email['recipients'],  $email['senders'], $email['sender'], $email['subject'], $email['message'], array(
-					'mime-version'	=> '1.0',
-					'content-type'	=> 'text/html; charset="UTF-8"'
-				)
-			);
+			try {
+				$send->recipients = $email['recipients'];
+				$send->sender_name = $email['sender'];
+				$send->sender_email_address = $email['senders'];
+				$send->subject = $email['subject'];
+				$send->text_html = $email['message'];
+				$send->send();
+				$success = true;
+			}
+			
+			catch (EmailGatewayException $e) {
+			    throw new SymphonyErrorPage('Error sending email. ' . $e->getMessage());
+			}
+			
+			catch (EmailException $e) {
+			    throw new SymphonyErrorPage('Error sending email. ' . $e->getMessage());
+			}
 			
 			// Log the email:
-			$email['success'] = ($return ? 'yes' : 'no');
+			$email['success'] = ($success ? 'yes' : 'no');
 			$email['date'] = DateTimeObj::get('c');
 			
 			Symphony::Database()->insert($email, 'tbl_etf_logs');

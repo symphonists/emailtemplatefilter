@@ -17,7 +17,7 @@
 		public function __construct(&$parent){
 			parent::__construct($parent);
 			
-			$this->_driver = $this->_Parent->ExtensionManager->create('emailtemplatefilter');
+			$this->_driver = Symphony::ExtensionManager()->create('emailtemplatefilter');
 		}
 		
 		public function __viewPreview() {
@@ -37,7 +37,7 @@
 				switch ($_POST['with-selected']) {
 					case 'delete':
 						foreach ($checked as $log_id) {
-							$this->_Parent->Database->query("
+							Symphony::Database()->query("
 								DELETE FROM
 									`tbl_etf_logs`
 								WHERE
@@ -63,8 +63,8 @@
 			$total = $this->_driver->countLogs();
 			$pages = ceil($total / 17);
 			
-			$sectionManager = new SectionManager($this->_Parent);
-			$entryManager = new EntryManager($this->_Parent);
+			$sectionManager = new SectionManager(Symphony::Engine());
+			$entryManager = new EntryManager(Symphony::Engine());
 			
 			$tableHead = array(
 				array('Date', 'col'),
@@ -209,7 +209,7 @@
 				
 				if ($page > 1) {
 					$li->appendChild(
-						Widget::Anchor('First', $this->_Parent->getCurrentPageURL() . '?pg=1')
+						Widget::Anchor('First', Symphony::Engine()->getCurrentPageURL() . '?pg=1')
 					);
 					
 				} else {
@@ -223,7 +223,7 @@
 				
 				if ($page > 1) {
 					$li->appendChild(
-						Widget::Anchor('&larr; Previous', $this->_Parent->getCurrentPageURL(). '?pg=' . ($page - 1))
+						Widget::Anchor('&larr; Previous', Symphony::Engine()->getCurrentPageURL(). '?pg=' . ($page - 1))
 					);
 					
 				} else {
@@ -244,7 +244,7 @@
 				
 				if ($page < $pages) {
 					$li->appendChild(
-						Widget::Anchor('Next &rarr;', $this->_Parent->getCurrentPageURL(). '?pg=' . ($page + 1))
+						Widget::Anchor('Next &rarr;', Symphony::Engine()->getCurrentPageURL(). '?pg=' . ($page + 1))
 					);
 					
 				} else {
@@ -258,7 +258,7 @@
 				
 				if ($page < $pages) {
 					$li->appendChild(
-						Widget::Anchor('Last', $this->_Parent->getCurrentPageURL(). '?pg=' . $pages)
+						Widget::Anchor('Last', Symphony::Engine()->getCurrentPageURL(). '?pg=' . $pages)
 					);
 					
 				} else {

@@ -17,15 +17,15 @@
 		protected $_uri = null;
 		protected $_valid = true;
 		
-		public function __construct(&$parent){
+		public function __construct($parent) {
 			parent::__construct($parent);
 			
 			$this->_uri = URL . '/symphony/extension/emailtemplatefilter';
-			$this->_driver = $this->_Parent->ExtensionManager->create('emailtemplatefilter');
+			$this->_driver = Symphony::ExtensionManager()->create('emailtemplatefilter');
 		}
 		
 		public function build($context) {
-			if (@$context[0] == 'edit' or @$context[0] == 'new') {
+			if (isset($context[0]) && ($context[0] == 'edit' || $context[0] == 'new')) {
 				if ($this->_editing = $context[0] == 'edit') {
 					$this->_fields = $this->_driver->getTemplate((integer)$context[1]);
 					$this->_conditions = $this->_driver->getConditions((integer)$context[1]);
@@ -35,8 +35,9 @@
 				$this->_conditions = (isset($_POST['conditions']) ? $_POST['conditions'] : $this->_conditions);
 				$this->_status = $context[2];
 				$this->_pages = $this->_driver->getPages();
-				
-			} else {
+			}
+			
+			else {
 				$this->_templates = $this->_driver->getTemplates();
 			}
 			
@@ -48,24 +49,23 @@
 		}
 		
 		public function __actionEdit() {
-			if (@array_key_exists('delete', $_POST['action'])) {
+			if (isset($_POST['action']) && array_key_exists('delete', $_POST['action'])) {
 				$this->__actionEditDelete();
-				
-			} else {
+			}
+			
+			else {
 				$this->__actionEditNormal();
 			}
 		}
 		
 		public function __actionEditDelete() {
-			$this->_Parent->Database->delete('tbl_etf_templates', " `id` = '{$this->_fields['id']}'");
-			$this->_Parent->Database->delete('tbl_etf_conditions', " `template_id` = '{$this->_fields['id']}'");
+			Symphony::Database()->delete('tbl_etf_templates', " `id` = '{$this->_fields['id']}'");
+			Symphony::Database()->delete('tbl_etf_conditions', " `template_id` = '{$this->_fields['id']}'");
 			
 			redirect("{$this->_uri}/templates/");
 		}
 		
 		public function __actionEditNormal() {
-			//header('content-type: text/plain');
-			
 		// Validate: ----------------------------------------------------------
 			
 			if (empty($this->_fields['name'])) {
@@ -104,11 +104,11 @@
 			$this->_fields['conditions'] = (integer)count($this->_conditions);
 			$this->_fields['datasources'] = implode(',', $this->_fields['datasources']);
 			
-			$this->_Parent->Database->insert($this->_fields, 'tbl_etf_templates', true);
+			Symphony::Database()->insert($this->_fields, 'tbl_etf_templates', true);
 			
 			if (!$this->_editing) {
 				$redirect_mode = 'created';
-				$template_id = $this->_Parent->Database->fetchVar('id', 0, "
+				$template_id = Symphony::Database()->fetchVar('id', 0, "
 					SELECT
 						e.id
 					FROM
@@ -117,19 +117,20 @@
 						e.id DESC
 					LIMIT 1
 				");
-				
-			} else {
+			}
+			
+			else {
 				$redirect_mode = 'saved';
 				$template_id = $this->_fields['id'];
 			}
 			
 			// Remove all existing conditions before inserting the remaining ones
-			$this->_Parent->Database->delete('tbl_etf_conditions', " `template_id` = '{$this->_fields['id']}'");
+			Symphony::Database()->delete('tbl_etf_conditions', " `template_id` = '{$this->_fields['id']}'");
 
 			foreach ($this->_conditions as $condition) {
 				$condition['template_id'] = $template_id;
 				
-				$this->_Parent->Database->insert($condition, 'tbl_etf_conditions', true);
+				Symphony::Database()->insert($condition, 'tbl_etf_conditions', true);
 			}
 			
 			redirect("{$this->_uri}/templates/edit/{$template_id}/{$redirect_mode}/");
@@ -141,6 +142,7 @@
 		
 		public function __viewEdit() {
 			$this->addStylesheetToHead(URL . '/extensions/emailtemplatefilter/assets/templates.css', 'screen', 1000);
+			$this->addScriptToHead(URL . '/extensions/emailtemplatefilter/assets/templates.js', 1000);
 			
 		// Status: -----------------------------------------------------------
 			
@@ -175,7 +177,7 @@
 			// Edit:
 			if ($this->_action == 'edit') {
 				if ($this->_template > 0) {
-					$row = $this->_Parent->Database->fetchRow(0, "
+					$row = Symphony::Database()->fetchRow(0, "
 						SELECT
 							e.*
 						FROM
@@ -186,7 +188,9 @@
 					
 					if (!empty($row)) {
 						$this->_fields = $row;
-					} else {
+					}
+					
+					else {
 						$this->_editing = false;
 					}
 				}
@@ -215,7 +219,7 @@
 			$label = Widget::Label(__('Name'));
 			$label->appendChild(Widget::Input(
 				'fields[name]',
-				General::sanitize(@$this->_fields['name'])
+				General::sanitize($this->_fields['name'])
 			));
 			
 			if (isset($this->_errors['name'])) {
@@ -226,7 +230,7 @@
 			
 		// Datasources --------------------------------------------------------
 			
-			$DSManager = new DatasourceManager($this->_Parent);
+			$DSManager = new DatasourceManager(Symphony::Engine());
 			$datasources = $DSManager->listAll();
 			$handles = explode(',', $this->_fields['datasources']);
 			
@@ -262,9 +266,9 @@
 			$fieldset->appendChild(new XMLElement('legend', __('Conditions')));
 			
 			$div = new XMLElement('div');
-			$div->setAttribute('class', 'subsection');
 			$div->appendChild(new XMLElement('h3', __('Conditions')));
 			$ol = new XMLElement('ol');
+			$ol->setAttribute('id', 'email-conditions-duplicator');
 			
 			// Add existing conditions:
 			foreach ($this->_conditions as $sortorder => $condition) {
@@ -448,20 +452,24 @@
 	-------------------------------------------------------------------------*/
 		
 		public function __actionIndex() {
-			$checked = @array_keys($_POST['items']);
+			$checked = (
+				(isset($_POST['items']) && is_array($_POST['items']))
+					? @array_keys($_POST['items'])
+					: null
+			);
 			
 			if (is_array($checked) and !empty($checked)) {
 				switch ($_POST['with-selected']) {
 					case 'delete':
 						foreach ($checked as $template_id) {
-							$this->_Parent->Database->query("
+							Symphony::Database()->query("
 								DELETE FROM
 									`tbl_etf_templates`
 								WHERE
 									`id` = {$template_id}
 							");
 							
-							$this->_Parent->Database->query("
+							Symphony::Database()->query("
 								DELETE FROM
 									`tbl_etf_conditions`
 								WHERE
@@ -495,8 +503,9 @@
 				$tableBody = array(
 					Widget::TableRow(array(Widget::TableData(__('None Found.'), 'inactive', null, count($tableHead))))
 				);
-				
-			} else {
+			}
+			
+			else {
 				foreach ($this->_templates as $template) {
 					$template = (object)$template;
 					
@@ -510,8 +519,9 @@
 					
 					if (!empty($template->conditions)) {
 						$col_conditions = Widget::TableData($template->conditions);
-						
-					} else {
+					}
+					
+					else {
 						$col_conditions = Widget::TableData('None', 'inactive');
 					}
 					

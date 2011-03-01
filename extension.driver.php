@@ -14,24 +14,24 @@
 		public function about() {
 			return array(
 				'name'			=> 'Filter: Email Template',
-				'version'		=> '1.0.14',
-				'release-date'	=> '2009-06-30',
+				'version'		=> '1.1.0',
+				'release-date'	=> '2011-03-01',
 				'author'		=> array(
 					'name'			=> 'Rowan Lewis',
-					'website'		=> 'http://pixelcarnage.com/',
-					'email'			=> 'rowan@pixelcarnage.com'
+					'website'		=> 'http://rowanlewis.com/',
+					'email'			=> 'me@rowanlewis.com'
 				)
 			);
 		}
 		
 		public function uninstall() {
-			$this->_Parent->Database->query("DROP TABLE `tbl_etf_templates`");
-			$this->_Parent->Database->query("DROP TABLE `tbl_etf_conditions`");
-			$this->_Parent->Database->query("DROP TABLE `tbl_etf_logs`");
+			Symphony::Database()->query("DROP TABLE `tbl_etf_templates`");
+			Symphony::Database()->query("DROP TABLE `tbl_etf_conditions`");
+			Symphony::Database()->query("DROP TABLE `tbl_etf_logs`");
 		}
 		
 		public function install() {
-			$this->_Parent->Database->query("
+			Symphony::Database()->query("
 				CREATE TABLE IF NOT EXISTS `tbl_etf_templates` (
 					`id` int(11) unsigned NOT NULL auto_increment,
 					`name` varchar(255) NOT NULL,
@@ -41,7 +41,7 @@
 				)
 			");
 			
-			$this->_Parent->Database->query("
+			Symphony::Database()->query("
 				CREATE TABLE IF NOT EXISTS `tbl_etf_conditions` (
 					`id` int(11) NOT NULL auto_increment,
 					`template_id` int(11) NOT NULL,
@@ -58,7 +58,7 @@
 				)
 			");
 			
-			$this->_Parent->Database->query("
+			Symphony::Database()->query("
 				CREATE TABLE IF NOT EXISTS `tbl_etf_logs` (
 					`id` int(11) NOT NULL auto_increment,
 					`template_id` int(11) NOT NULL,
@@ -141,7 +141,7 @@
 		
 		public function getConditions($template_id = null) {
 			if (is_numeric($template_id)) {
-				$results = $this->_Parent->Database->fetch("
+				$results = Symphony::Database()->fetch("
 					SELECT
 						c.*
 					FROM
@@ -151,9 +151,10 @@
 					ORDER BY
 						c.sortorder ASC
 				");
-				
-			} else {
-				$results = $this->_Parent->Database->fetch("
+			}
+			
+			else {
+				$results = Symphony::Database()->fetch("
 					SELECT
 						c.*
 					FROM
@@ -167,7 +168,7 @@
 		}
 		
 		public function countLogs() {
-			return (integer)$this->_Parent->Database->fetchVar('total', 0, "
+			return (integer)Symphony::Database()->fetchVar('total', 0, "
 				SELECT
 					COUNT(l.id) AS `total`
 				FROM
@@ -178,7 +179,7 @@
 		public function getLogs($page) {
 			$start = ($page - 1) * 17;
 			
-			return $this->_Parent->Database->fetch("
+			return Symphony::Database()->fetch("
 				SELECT
 					l.*
 				FROM
@@ -190,7 +191,7 @@
 		}
 		
 		public function getLog($log_id) {
-			return $this->_Parent->Database->fetchRow(0, "
+			return Symphony::Database()->fetchRow(0, "
 				SELECT
 					l.*
 				FROM
@@ -202,7 +203,7 @@
 		}
 		
 		public function getPages() {
-			$pages = $this->_Parent->Database->fetch("
+			$pages = Symphony::Database()->fetch("
 				SELECT
 					p.*
 				FROM
@@ -234,7 +235,7 @@
 		}
 		
 		public function getPage($page_id) {
-			return (object)$this->_Parent->Database->fetchRow(0, "
+			return (object)Symphony::Database()->fetchRow(0, "
 				SELECT
 					p.*
 				FROM
@@ -246,7 +247,7 @@
 		}
 		
 		public function getTemplates() {
-			return $this->_Parent->Database->fetch("
+			return Symphony::Database()->fetch("
 				SELECT
 					t.*
 				FROM
@@ -257,7 +258,7 @@
 		}
 		
 		public function getTemplate($template_id) {
-			return $this->_Parent->Database->fetchRow(0, "
+			return Symphony::Database()->fetchRow(0, "
 				SELECT
 					t.id, t.name, t.datasources
 				FROM
@@ -277,9 +278,10 @@
 			
 			foreach ($templates as $template) {
 				$id = "etf-{$template['id']}";
+				$selected = is_array($context['selected']) && in_array($id, $context['selected']);
 				
 				$context['options'][] = array(
-					$id, @in_array($id, $context['selected']),
+					$id, $selected,
 					General::sanitize("Send Email: {$template['name']}")
 				);
 			}
@@ -310,8 +312,9 @@
 					if (is_array($value)) {
 						$child = new XMLElement($key);
 						$this->getDataParam($value, $child);
-						
-					} else {
+					}
+					
+					else {
 						if (is_bool($value)) {
 							$value = ($value ? 'yes' : 'no');
 						}
@@ -336,8 +339,6 @@
 		}
 		
 		public function sendEmail($entry_id, $template_id) {
-			header('content-type: text/plain');
-			
 			$template = $this->getTemplate($template_id);
 			$conditions = $this->getConditions($template_id);
 			$data = $this->getData($template, $entry_id);
@@ -353,12 +354,6 @@
 				$results = $xpath->query($condition['expression']);
 				
 				if ($results->length > 0) {
-					/*
-					foreach ($results as $node) {
-						var_dump($data->saveXML($node));
-					}
-					*/
-					
 					$email = $condition; break;
 				}
 			}
@@ -435,7 +430,7 @@
 			$email['success'] = ($return ? 'yes' : 'no');
 			$email['date'] = DateTimeObj::get('c');
 			
-			$this->_Parent->Database->insert($email, 'tbl_etf_logs');
+			Symphony::Database()->insert($email, 'tbl_etf_logs');
 			
 			return $return;
 		}

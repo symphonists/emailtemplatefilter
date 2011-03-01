@@ -102,7 +102,11 @@
 		// Save: --------------------------------------------------------------
 			
 			$this->_fields['conditions'] = (integer)count($this->_conditions);
-			$this->_fields['datasources'] = implode(',', $this->_fields['datasources']);
+			$this->_fields['datasources'] = (
+				isset($this->_fields['datasources']) && is_array($this->_fields['datasources'])
+					? implode(',', $this->_fields['datasources'])
+					: null
+			);
 			
 			Symphony::Database()->insert($this->_fields, 'tbl_etf_templates', true);
 			

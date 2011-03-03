@@ -458,7 +458,7 @@
 		public function __actionIndex() {
 			$checked = (
 				(isset($_POST['items']) && is_array($_POST['items']))
-					? @array_keys($_POST['items'])
+					? array_keys($_POST['items'])
 					: null
 			);
 			

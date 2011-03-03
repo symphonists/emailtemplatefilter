@@ -21,7 +21,11 @@
 		}
 		
 		public function __viewPreview() {
-			$log = $this->_driver->getLog(@(integer)$this->_context[1]);
+			$log = $this->_driver->getLog(
+				isset($this->_context[1]) && is_numeric($this->_context[1])
+					? (integer)$this->_context[1]
+					: 0
+			);
 			
 			header('content-type: text/html; charset=utf-8');
 			
@@ -33,7 +37,7 @@
 		public function __actionIndex() {
 			$checked = (
 				(isset($_POST['items']) && is_array($_POST['items']))
-					? @array_keys($_POST['items'])
+					? array_keys($_POST['items'])
 					: null
 			);
 			
@@ -60,7 +64,11 @@
 			$this->setTitle('Symphony &ndash; Email Logs');
 			$this->appendSubheading('Logs');
 			
-			$page = (@(integer)$_GET['pg'] > 1 ? (integer)$_GET['pg'] : 1);
+			$page = (
+				isset($_GET['pg']) && (integer)$_GET['pg'] > 1
+					? (integer)$_GET['pg']
+					: 1
+			);
 			$logs = $this->_driver->getLogs($page);
 			$start = max(1, (($page - 1) * 17));
 			$end = ($start == 1 ? 17 : $start + count($logs));
@@ -79,7 +87,7 @@
 				array('Template', 'col'),
 				//array('Section', 'col'),
 				array('Entry', 'col')
-			);	
+			);
 			
 			$tableBody = array();
 			

@@ -1,0 +1,107 @@
+<?php
+	
+	require_once(TOOLKIT . '/class.administrationpage.php');
+	require_once(TOOLKIT . '/class.datasourcemanager.php');
+	
+	class ContentExtensionEmailBuilderEmails extends AdministrationPage {
+		public function action() {
+			$items = (
+				(isset($_POST['items']) && is_array($_POST['items']))
+					? array_keys($_POST['items'])
+					: null
+			);
+			
+			// Delete selected emails:
+			if ($_POST['with-selected'] == 'delete' && !empty($items)) {
+				EmailBuilderEmail::deleteAll($items);
+			}
+		}
+		
+		public function view() {
+			$root_url = dirname(Symphony::Engine()->getCurrentPageURL());
+			$iterator = new EmailBuilderEmailIterator();
+			
+			$this->setPageType('table');
+			$this->setTitle(__('Symphony &ndash; Emails'));
+			
+			$this->appendSubheading('Emails', Widget::Anchor(
+				__('Create New'), $root_url . '/email/',
+				__('Create a new email'), 'create button'
+			));
+			
+			$table = new XMLElement('table');
+			$table->appendChild(
+				Widget::TableHead(array(
+					array(__('Name'), 'col'),
+					array(__('Subject'), 'col'),
+					array(__('Sender Name'), 'col'),
+					array(__('Sender Address'), 'col'),
+					array(__('Recipient Address'), 'col'),
+					array(__('Logs'), 'col')
+				))
+			);
+			$table->setAttribute('class', 'selectable');
+			
+			if (!$iterator->valid()) {
+				$table->appendChild(Widget::TableRow(array(
+					Widget::TableData(
+						__('None Found.'),
+						'inactive',
+						null, 6
+					)
+				)));
+			}
+			
+			else foreach ($iterator as $email) {
+				$first_cell = Widget::TableData(
+					Widget::Anchor(
+						$email->data()->name,
+						sprintf(
+							'/%s/email/%d/',
+							$root_url, $email->data()->id
+						)
+					)
+				);
+				$first_cell->appendChild(Widget::Input(
+					sprintf('items[%d]', $email->data()->id),
+					null, 'checkbox'
+				));
+				$table->appendChild($first_cell);
+				
+				$table->appendChild(Widget::TableData($email->data()->subject));
+				$table->appendChild(Widget::TableData($email->data()->sender_name));
+				$table->appendChild(Widget::TableData($email->data()->sender_address));
+				$table->appendChild(Widget::TableData($email->data()->recipient_address));
+				
+				$table->appendChild(Widget::TableData(
+					Widget::Anchor(
+						sprintf(
+							'%d &rarr;',
+							$email->countLogs()
+						),
+						sprintf(
+							'/%s/logs/%d/',
+							$root_url, $email->data()->id
+						)
+					)
+				));
+			}
+			
+			$this->Form->appendChild($table);
+			
+			$actions = new XMLElement('div');
+			$actions->setAttribute('class', 'actions');
+			
+			$options = array(
+				array(null, false, __('With Selected...')),
+				array('delete', false, 'Delete')									
+			);
+			
+			$actions->appendChild(Widget::Select('with-selected', $options));
+			$actions->appendChild(Widget::Input('action[apply]', __('Apply'), 'submit'));
+			
+			$this->Form->appendChild($actions);
+		}
+	}
+	
+?>

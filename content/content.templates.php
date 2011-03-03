@@ -148,7 +148,7 @@
 			$this->addStylesheetToHead(URL . '/extensions/emailtemplatefilter/assets/templates.css', 'screen', 1000);
 			$this->addScriptToHead(URL . '/extensions/emailtemplatefilter/assets/templates.js', 1000);
 			
-		// Status: -----------------------------------------------------------
+		// Status: ---------------------------------------------------------------
 			
 			if (!$this->_valid) $this->pageAlert(
 				__('An error occurred while processing this form. <a href="#error">See below for details.</a>'),
@@ -200,17 +200,17 @@
 				}
 			}
 			
-		// Header: ------------------------------------------------------------
+		// Header -----------------------------------------------------------------
 			
 			$this->setPageType('form');
 			$this->setTitle(__('Symphony &ndash; Email Templates') . (
 				$this->_editing ? ' &ndash; ' . $this->_fields['name'] : null
 			));
-			$this->appendSubheading("<a href=\"{$this->_uri}/templates/\">Templates</a> &mdash; " . (
+			$this->appendSubheading(
 				$this->_editing ? $this->_fields['name'] : __('Untitled')
-			));
+			);
 			
-		// Form: --------------------------------------------------------------
+		// Essentials -------------------------------------------------------------
 			
 			$fieldset = new XMLElement('fieldset');
 			$fieldset->setAttribute('class', 'settings');
@@ -220,6 +220,7 @@
 				$fieldset->appendChild(Widget::Input("fields[id]", $this->_fields['id'], 'hidden'));
 			}
 			
+			// Name:
 			$label = Widget::Label(__('Name'));
 			$label->appendChild(Widget::Input(
 				'fields[name]',
@@ -231,46 +232,144 @@
 			}
 			
 			$fieldset->appendChild($label);
+			$this->Form->appendChild($fieldset);
 			
-		// Datasources --------------------------------------------------------
+		// Content ----------------------------------------------------------------
 			
-			$DSManager = new DatasourceManager(Symphony::Engine());
-			$datasources = $DSManager->listAll();
-			$handles = explode(',', $this->_fields['datasources']);
-			
-			$options = array();
-			
-			foreach ($datasources as $about) {
-				$handle = $about['handle'];
-				$selected = in_array($handle, $handles);
-				
-				$options[] = array(
-					$handle, $selected, $about['name']
-				);
-			}
-			
-			$label = Widget::Label(__('Datasources'));
-			$label->appendChild(Widget::Select(
-				"fields[datasources][]", $options,
-				array('multiple' => 'multiple')
-			));
+			$fieldset = new XMLElement('fieldset');
+			$fieldset->setAttribute('class', 'settings');
+			$fieldset->appendChild(new XMLElement('legend', __('Content')));
 			
 			$help = new XMLElement('p');
 			$help->setAttribute('class', 'help');
-			$help->setValue(__('The parameter <code>%s</code> can be used in the selected datasources to get related data.', array('$etf-entry-id')));
+			$help->setValue(__(
+				'To access the XML of your template page, use XPath expressions:<br /><code>%s</code>.',
+				array('{datasource/entry/field-one}')
+			));
+			
+			$fieldset->appendChild($help);
+			
+			// Subject:
+			$label = Widget::Label(__('Subject'));
+			$label->appendChild(Widget::Input(
+				"fields[subject]",
+				General::sanitize($fields['subject'])
+			));
+			
+			if (isset($this->_errors['subject'])) {
+				$label = Widget::wrapFormElementWithError($label, $this->_errors['subject']);
+			}
 			
 			$fieldset->appendChild($label);
+			
+			$group = new XMLElement('div');
+			$group->setAttribute('class', 'group');
+			
+			// Sender Name
+			$label = Widget::Label(__('Sender Name'));
+			$label->appendChild(Widget::Input(
+				"fields[sender]",
+				General::sanitize($fields['sender'])
+			));
+			
+			if (isset($this->_errors['sender'])) {
+				$label = Widget::wrapFormElementWithError($label, $this->_errors['sender']);
+			}
+			
+			$group->appendChild($label);
+			
+			// Senders
+			$label = Widget::Label(__('Sender Address'));
+			$label->appendChild(Widget::Input(
+				"fields[senders]",
+				General::sanitize($fields['senders'])
+			));
+			
+			if (isset($this->_errors['senders'])) {
+				$label = Widget::wrapFormElementWithError($label, $this->_errors['senders']);
+			}
+			
+			$group->appendChild($label);
+			$fieldset->appendChild($group);
+			
+			// Recipients
+			$label = Widget::Label(__('Recipient Addresses'));
+			$label->appendChild(Widget::Input(
+				"fields[recipients]",
+				General::sanitize($fields['recipients'])
+			));
+			
+			if (isset($this->_errors['recipients'])) {
+				$label = Widget::wrapFormElementWithError($label, $this->_errors['recipients']);
+			}
+			
+			$fieldset->appendChild($label);
+			$this->Form->appendChild($fieldset);
+			
+		// Template ---------------------------------------------------------------
+			
+			$fieldset = new XMLElement('fieldset');
+			$fieldset->setAttribute('class', 'settings');
+			$fieldset->appendChild(new XMLElement('legend', __('Template')));
+			
+			$help = new XMLElement('p');
+			$help->setAttribute('class', 'help');
+			$help->setValue(__('The <code>%s</code> parameter can be used by any datasources on your template page.', array('$etf-entry-id')));
+			
 			$fieldset->appendChild($help);
+			
+			// Page:
+			$div = new XMLElement('div');
+			$div->setAttribute('class', 'group');
+			
+			$label = Widget::Label(__('Page'));
+			$options = array(
+				array(null, false, __('Choose one...'))
+			);
+			
+			foreach ($this->_pages as $page) {
+				$options[] = array(
+					$page->id, ($page->id == $condition['page']), $page->path
+				);
+			}
+			
+			$label->appendChild(Widget::Select(
+				"fields[page]", $options
+			));
+			
+			if (isset($this->_errors['page'])) {
+				$label = Widget::wrapFormElementWithError($label, $this->_errors['page']);
+			}
+			
+			$div->appendChild($label);
+			
+			// Params:
+			$label = Widget::Label(__('URL Parameters'));
+			$label->appendChild(Widget::Input(
+				"fields[params]",
+				General::sanitize($fields['params'])
+			));
+			
+			if (isset($this->_errors['params'])) {
+				$label = Widget::wrapFormElementWithError($label, $this->_errors['params']);
+			}
+			
+			$div->appendChild($label);
+			$fieldset->appendChild($div);
 			$this->Form->appendChild($fieldset);
 			
 		// Conditions -------------------------------------------------------------
 			
 			$fieldset = new XMLElement('fieldset');
 			$fieldset->setAttribute('class', 'settings');
-			$fieldset->appendChild(new XMLElement('legend', __('Conditions')));
+			$fieldset->appendChild(new XMLElement('legend', __('Overrides')));
 			
-			$div = new XMLElement('div');
-			$div->appendChild(new XMLElement('h3', __('Conditions')));
+			$help = new XMLElement('p');
+			$help->setAttribute('class', 'help');
+			$help->setValue(__('An override changes the above content and template when its expression matches an XML element or is <code>true()</code>.'));
+			
+			$fieldset->appendChild($help);
+			
 			$ol = new XMLElement('ol');
 			$ol->setAttribute('id', 'email-conditions-duplicator');
 			
@@ -288,13 +387,12 @@
 			$wrapper->setAttribute('class', 'template');
 			
 			$this->displayCondition($wrapper, '-1', array(
-				'type'		=> __('XPath Condition')
+				'type'		=> __('Override')
 			));
 			
 			$ol->appendChild($wrapper);
 			
-			$div->appendChild($ol);
-			$fieldset->appendChild($div);
+			$fieldset->appendChild($ol);
 			$this->Form->appendChild($fieldset);
 			
 		// Footer: ------------------------------------------------------------
@@ -331,73 +429,7 @@
 				$wrapper->appendChild(Widget::Input("conditions[{$sortorder}][id]", $condition['id'], 'hidden'));
 			}
 			
-		// Subject ------------------------------------------------------------
-			
-			$label = Widget::Label(__('Subject'));
-			$label->appendChild(Widget::Input(
-				"conditions[{$sortorder}][subject]",
-				General::sanitize($condition['subject'])
-			));
-			
-			if (isset($this->_errors["{$sortorder}:subject"])) {
-				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:subject"]);
-			}
-			
-			$wrapper->appendChild($label);
-			
-		// Sender Name --------------------------------------------------------
-			
-			$label = Widget::Label(__('Sender Name'));
-			$label->appendChild(Widget::Input(
-				"conditions[{$sortorder}][sender]",
-				General::sanitize($condition['sender'])
-			));
-			
-			if (isset($this->_errors["{$sortorder}:sender"])) {
-				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:sender"]);
-			}
-			
-			$wrapper->appendChild($label);
-			
-		// Senders ------------------------------------------------------------
-			
-			$label = Widget::Label(__('Senders'));
-			$label->appendChild(Widget::Input(
-				"conditions[{$sortorder}][senders]",
-				General::sanitize($condition['senders'])
-			));
-			
-			if (isset($this->_errors["{$sortorder}:senders"])) {
-				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:senders"]);
-			}
-			
-			$wrapper->appendChild($label);
-			
-		// Recipients ---------------------------------------------------------
-			
-			$label = Widget::Label(__('Recipients'));
-			$label->appendChild(Widget::Input(
-				"conditions[{$sortorder}][recipients]",
-				General::sanitize($condition['recipients'])
-			));
-			
-			if (isset($this->_errors["{$sortorder}:recipients"])) {
-				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:recipients"]);
-			}
-			
-			$help = new XMLElement('p');
-			$help->setAttribute('class', 'help');
-			$help->setValue(__(
-				'To access the XML, use XPath expressions: <code>%s static text %s</code>.',
-				array('{datasource/entry/field-one}', '{datasource/entry/field-two}')
-			));
-			
-			$wrapper->appendChild($label);
-			$wrapper->appendChild($help);
-			
 		// Expression ---------------------------------------------------------
-			
-			$wrapper->appendChild(new XMLElement('h5', __('Advanced')));
 			
 			$label = Widget::Label(__('Expression'));
 			$label->appendChild(Widget::Input(
@@ -411,13 +443,82 @@
 			
 			$wrapper->appendChild($label);
 			
+		// Subject ------------------------------------------------------------
+			
+			$fieldset = new XMLElement('fieldset');
+			$fieldset->appendChild(new XMLElement('legend', __('Content')));
+			
+			$label = Widget::Label(__('Subject'));
+			$label->appendChild(Widget::Input(
+				"conditions[{$sortorder}][subject]",
+				General::sanitize($condition['subject'])
+			));
+			
+			if (isset($this->_errors["{$sortorder}:subject"])) {
+				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:subject"]);
+			}
+			
+			$fieldset->appendChild($label);
+			
+		// Sender Name --------------------------------------------------------
+			
+			$group = new XMLElement('div');
+			$group->setAttribute('class', 'group');
+			
+			$label = Widget::Label(__('Sender Name'));
+			$label->appendChild(Widget::Input(
+				"conditions[{$sortorder}][sender]",
+				General::sanitize($condition['sender'])
+			));
+			
+			if (isset($this->_errors["{$sortorder}:sender"])) {
+				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:sender"]);
+			}
+			
+			$group->appendChild($label);
+			
+		// Senders ------------------------------------------------------------
+			
+			$label = Widget::Label(__('Sender Address'));
+			$label->appendChild(Widget::Input(
+				"conditions[{$sortorder}][senders]",
+				General::sanitize($condition['senders'])
+			));
+			
+			if (isset($this->_errors["{$sortorder}:senders"])) {
+				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:senders"]);
+			}
+			
+			$group->appendChild($label);
+			$fieldset->appendChild($group);
+			
+		// Recipients ---------------------------------------------------------
+			
+			$label = Widget::Label(__('Recipient Addresses'));
+			$label->appendChild(Widget::Input(
+				"conditions[{$sortorder}][recipients]",
+				General::sanitize($condition['recipients'])
+			));
+			
+			if (isset($this->_errors["{$sortorder}:recipients"])) {
+				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:recipients"]);
+			}
+			
+			$fieldset->appendChild($label);
+			$wrapper->appendChild($fieldset);
+			
 		// Page ---------------------------------------------------------------
+			
+			$fieldset = new XMLElement('fieldset');
+			$fieldset->appendChild(new XMLElement('legend', __('Template')));
 			
 			$div = new XMLElement('div');
 			$div->setAttribute('class', 'group');
 			
 			$label = Widget::Label(__('Page'));
-			$options = array();
+			$options = array(
+				array(null, false, __('Choose one...'))
+			);
 			
 			foreach ($this->_pages as $page) {
 				$options[] = array(
@@ -448,7 +549,8 @@
 			}
 			
 			$div->appendChild($label);
-			$wrapper->appendChild($div);
+			$fieldset->appendChild($div);
+			$wrapper->appendChild($fieldset);
 		}
 		
 	/*-------------------------------------------------------------------------

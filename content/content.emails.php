@@ -35,7 +35,8 @@
 					array(__('Sender Name'), 'col'),
 					array(__('Sender Address'), 'col'),
 					array(__('Recipient Address'), 'col'),
-					array(__('Logs'), 'col')
+					array(__('Logs'), 'col'),
+					array(null, 'col')
 				))
 			);
 			$table->setAttribute('class', 'selectable');
@@ -79,7 +80,17 @@
 							$email->countLogs()
 						),
 						sprintf(
-							'/%s/logs/%d/',
+							'%s/logs/%d/',
+							$this->root_url,
+							$email->data()->id
+						)
+					)
+				));
+				$row->appendChild(Widget::TableData(
+					Widget::Anchor(
+						'Preview &rarr;',
+						sprintf(
+							'%s/preview/%d/',
 							$this->root_url,
 							$email->data()->id
 						)

@@ -1,4 +1,29 @@
-.index div.actions {
-	padding: 0 0 0 1.75em;
-	text-align: left;
+iframe {
+	box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	-webkit-box-sizing: border-box;
+	border: 1px solid #ddddcc;
+	border-top: none;
+	display: block;
+	overflow: hidden;
+	width: 100%;
+}
+fieldset legend {
+	line-height: inherit;
+	margin-bottom: 0;
+	padding-top: 1em;
+}
+fieldset p.label span {
+	display: block;
+}
+fieldset p.label span select {
+	display: inline-block;
+	min-width: 200px;
+	width: auto;
+}
+fieldset p.label span input {
+	margin: 0 0 0 5px;
+}
+fieldset p.label + p.help {
+	margin-top: 1em;
 }

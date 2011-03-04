@@ -116,6 +116,27 @@
 			return array_sum($result) == count($result);
 		}
 		
+		public function getPreviewURL($entry_id) {
+			$page = Symphony::Database()->fetchRow(0, sprintf("
+				SELECT
+					p.path,
+					p.handle
+				FROM
+					`tbl_pages` as p
+				WHERE
+					p.id = %d
+				",
+				$this->data->page_id
+			));
+			
+			$path = trim(rtrim($page['path'], '/') . '/' . $page['handle'], '/');
+			
+			return sprintf(
+				'%s/%s?eb-entry-id=%d',
+				URL, $path, $entry_id
+			);
+		}
+		
 		public function setData($data) {
 			$this->data = (object)array();
 			

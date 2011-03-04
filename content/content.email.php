@@ -135,13 +135,13 @@
 				(
 					isset($email->data()->id)
 						?  Widget::Anchor(
-							__('Preview'),
+							__('Preview Email'),
 							sprintf(
 								'%s/preview/%d/',
 								$this->root_url,
 								$email->data()->id
 							),
-							__('Preview email'),
+							__('Preview Email'),
 							'button'
 						)
 						: null

@@ -11,9 +11,7 @@
 			$entryManager = new EntryManager(Symphony::Engine());
 			$sectionManager = new SectionManager(Symphony::Engine());
 			$sections = $sectionManager->fetch(null, 'ASC', 'sortorder');
-			$options = array(
-				array(null, false, __('Preview with...'))
-			);
+			$options = array();
 			
 			foreach ($sections as $section) {
 				$entries = $entryManager->fetch(null, $section->get('id'), 5, 0);
@@ -67,7 +65,7 @@
 		public function view() {
 			$email = $this->email;
 			
-			$this->setPageType('table');
+			$this->setPageType('form');
 			$this->setTitle(__(
 				'%1$s &ndash; %2$s &ndash; %3$s',
 				array(
@@ -76,11 +74,39 @@
 					$email->data()->name
 				)
 			));
-			$this->appendSubheading($email->data()->name);
+			$this->appendSubheading($email->data()->name, (
+				Widget::Anchor(
+					__('Edit Email'),
+					sprintf(
+						'%s/email/%d/',
+						$this->root_url,
+						$email->data()->id
+					),
+					__('Edit Email'),
+					'button'
+				)
+			));
 			$this->addStylesheetToHead(URL . '/extensions/emailbuilder/assets/preview.css');
+			$this->addScriptToHead(URL . '/extensions/emailbuilder/assets/preview.js');
 			
-			$actions = new XMLElement('div');
-			$actions->setAttribute('class', 'actions');
+			if ($this->entry) {
+				$url = $email->getPreviewURL($this->entry);
+				
+				$iframe = new XMLElement('iframe');
+				$iframe->setAttribute('src', $url);
+				$this->Form->appendChild($iframe);
+			}
+			
+			$fieldset = new XMLElement('fieldset');
+			$fieldset->setAttribute('class', 'xsettings');
+			$fieldset->appendChild(new XMLElement('legend', __('Email Preview')));
+			
+			if (isset($url)) {
+				$help = new XMLElement('p');
+				$help->setAttribute('class', 'help');
+				$help->setValue(__('Previewing: <a href="%1$s">%1$s</a>', array($url)));
+				//$fieldset->appendChild($help);
+			}
 			
 			// Mark current option as selected:
 			$options = $this->options;
@@ -95,10 +121,21 @@
 				}
 			}
 			
-			$actions->appendChild(Widget::Select('preview-selected', $options));
-			$actions->appendChild(Widget::Input('action[apply]', __('Apply'), 'submit'));
+			$label = new XMLElement('p');
+			$label->setAttribute('class', 'label');
 			
-			$this->Form->appendChild($actions);
+			$span = new XMLElement('span');
+			$span->appendChild(Widget::Select('preview-selected', $options));
+			$span->appendChild(Widget::Input('action[apply]', __('Preview'), 'submit'));
+			$label->appendChild($span);
+			$fieldset->appendChild($label);
+			
+			$help = new XMLElement('p');
+			$help->setAttribute('class', 'help');
+			$help->setValue(__('Choose one of the available entries above to send to the template page for a preview.'));
+			
+			$fieldset->appendChild($help);
+			$this->Form->appendChild($fieldset);
 		}
 	}
 	

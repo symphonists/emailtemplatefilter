@@ -2,43 +2,69 @@
 	
 	class EmailBuilderEmail {
 		static public function deleteAll($items) {
+			$result = array();
+			
 			foreach ($items as $id) {
-				Symphony::Database()->query("
-					DELETE FROM
-						`tbl_etf_emails`
-					WHERE
-						`id` = {$id}
-				");
-				
-				Symphony::Database()->query("
-					DELETE FROM
-						`tbl_etf_logs`
-					WHERE
-						`email_id` = {$id}
-				");
-				
-				Symphony::Database()->query("
-					DELETE FROM
-						`tbl_etf_overrides`
-					WHERE
-						`email_id` = {$id}
-				");
-				
-				Symphony::Database()->query("
-					DELETE FROM
-						`tbl_etf_parameters`
-					WHERE
-						`email_id` = {$id}
-				");
+				$result[] = self::load($id)->delete();
 			}
+			
+			return array_sum($result) == count($result);
+		}
+		
+		static public function exists($id) {
+			$data = Symphony::Database()->fetch(sprintf("
+				SELECT
+					e.*
+				FROM
+					`tbl_etf_emails` AS e
+				WHERE
+					e.id = %d
+				",
+				$id
+			));
+			
+			return isset($data[0]['id']);
+		}
+		
+		static public function load($id) {
+			$data = Symphony::Database()->fetch(sprintf("
+				SELECT
+					e.*
+				FROM
+					`tbl_etf_emails` AS e
+				WHERE
+					e.id = %d
+				",
+				$id
+			));
+			$overrides = Symphony::Database()->fetch(sprintf("
+				SELECT
+					o.*
+				FROM
+					`tbl_etf_overrides` AS o
+				WHERE
+					o.email_id = %d
+				ORDER BY
+					o.sortorder ASC
+				",
+				$id
+			));
+			
+			$email = new self();
+			$email->setData($data[0]);
+			$email->setOverrides($overrides);
+			
+			return $email;
 		}
 		
 		protected $data;
 		protected $errors;
 		protected $overrides;
 		
-		public function __construct($data = array()) {
-			$this->setData($data);
+		public function __construct() {
+			$this->data = (object)array();
+			$this->errors = (object)array();
+			$this->overrides = array();
 		}
 		
 		public function data() {
@@ -57,10 +83,43 @@
 			return 0;
 		}
 		
-		public function setData($data) {
-			$this->data = (object)$data;
+		public function delete() {
+			$result = array();
 			
-			foreach ($data['fields'] as $key => $value) {
+			$result[] = Symphony::Database()->query(sprintf("
+				DELETE FROM
+					`tbl_etf_emails`
+				WHERE
+					`id` = %d
+				",
+				$this->data->id
+			));
+			
+			$result[] = Symphony::Database()->query(sprintf("
+				DELETE FROM
+					`tbl_etf_logs`
+				WHERE
+					`email_id` = %d
+				",
+				$this->data->id
+			));
+			
+			$result[] = Symphony::Database()->query(sprintf("
+				DELETE FROM
+					`tbl_etf_overrides`
+				WHERE
+					`email_id` = %d
+				",
+				$this->data->id
+			));
+			
+			return array_sum($result) == count($result);
+		}
+		
+		public function setData($data) {
+			$this->data = (object)array();
+			
+			foreach ($data as $key => $value) {
 				$this->data->{$key} = $value;
 			}
 		}
@@ -72,6 +131,49 @@
 				$this->overrides[$order] = new EmailBuilderOverride($override);
 				$this->overrides[$order]->data()->sortorder = $order;
 			}
+		}
+		
+		public function save() {
+			$result = array();
+			$fields = array(
+				'id'				=> null,
+				'page_id'			=> null,
+				'name'				=> null,
+				'subject'			=> null,
+				'sender_name'		=> null,
+				'sender_address'	=> null,
+				'recipient_address'	=> null
+			);
+			
+			foreach ($fields as $key => $value) {
+				if (!isset($this->data->{$key})) continue;
+				
+				$fields[$key] = $this->data->{$key};
+			}
+			
+			$result[] = Symphony::Database()->insert($fields, 'tbl_etf_emails', true);
+			
+			if (!isset($this->data->id)) {
+				$this->data->id = Symphony::Database()->getInsertID();
+			}
+			
+			// Delete old overrides:
+			$result[] = Symphony::Database()->query(sprintf("
+				DELETE FROM
+					`tbl_etf_overrides`
+				WHERE
+					`email_id` = %d
+				",
+				$this->data->id
+			));
+			
+			// Insert new overrides:
+			foreach ($this->overrides as $override) {
+				$override->data()->email_id = $this->data->id;
+				$result[] = $override->save();
+			}
+			
+			return array_sum($result) == count($result);
 		}
 		
 		public function validate() {
@@ -117,30 +219,6 @@
 			}
 			
 			return $valid;
-			
-			/*
-			foreach ($this->_conditions as $sortorder => $condition) {
-				if (empty($condition['subject'])) {
-					$this->errors["{$sortorder}:subject"] = __('Subject must not be empty.');
-				}
-				
-				if (empty($condition['sender'])) {
-					$this->errors["{$sortorder}:sender"] = __('Sender Name must not be empty.');
-				}
-				
-				if (empty($condition['senders'])) {
-					$this->errors["{$sortorder}:senders"] = __('Senders must not be empty.');
-				}
-				
-				if (empty($condition['recipients'])) {
-					$this->errors["{$sortorder}:recipients"] = __('Recipients must not be empty.');
-				}
-				
-				if (empty($condition['page'])) {
-					$this->errors["{$sortorder}:page"] = __('Page must not be empty.');
-				}
-			}
-			*/
 		}
 	}
 	

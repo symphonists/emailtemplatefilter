@@ -28,9 +28,9 @@
 		}
 		
 		public function uninstall() {
+			Symphony::Configuration()->remove('emailbuilder');
 			Symphony::Database()->query("DROP TABLE `tbl_etf_emails`");
 			Symphony::Database()->query("DROP TABLE `tbl_etf_overrides`");
-			Symphony::Database()->query("DROP TABLE `tbl_etf_parameters`");
 			Symphony::Database()->query("DROP TABLE `tbl_etf_logs`");
 		}
 		
@@ -57,33 +57,17 @@
 					CREATE TABLE IF NOT EXISTS `tbl_etf_overrides` (
 						`id` int(11) not null auto_increment,
 						`email_id` int(11) not null,
-						`page_id` int(11) not null,
 						`expression` text not null,
-						`sortorder` int(11) not null,
-						`subject` text not null,
-						`sender_name` text not null,
-						`sender_address` text not null,
-						`recipient_address` text not null,
+						`sortorder` int(11) not null default 0,
+						`subject` text,
+						`sender_name` text,
+						`sender_address` text,
+						`recipient_address` text,
 						PRIMARY KEY (`id`),
-						KEY `email_id` (`email_id`),
-						KEY `page_id` (`page_id`)
+						KEY `email_id` (`email_id`)
 					) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 				");
 				$drop[] = 'tbl_etf_overrides';
-				
-				Symphony::Database()->query("
-					CREATE TABLE IF NOT EXISTS `tbl_etf_parameters` (
-						`id` int(11) not null auto_increment,
-						`email_id` int(11) not null,
-						`override_id` int(11) not null,
-						`name` varchar(255) not null,
-						`expression` text not null,
-						PRIMARY KEY (`id`),
-						KEY `email_id` (`email_id`),
-						KEY `override_id` (`override_id`)
-					) ENGINE=MyISAM DEFAULT CHARSET=utf8;
-				");
-				$drop[] = 'tbl_etf_parameters';
 				
 				Symphony::Database()->query("
 					CREATE TABLE IF NOT EXISTS `tbl_etf_logs` (
@@ -91,7 +75,7 @@
 						`email_id` int(11) not null,
 						`entry_id` int(11) NOT NULL,
 						`date` datetime NOT NULL,
-						`success` enum('yes','no') NOT NULL,
+						`success` enum('yes','no') not null,
 						`sender_name` text,
 						`sender_address` text,
 						`recipient_address` text,
@@ -103,6 +87,9 @@
 						KEY `date` (`date`)
 					) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 				");
+				
+				Symphony::Configuration()->set('navigation_group', __('Blueprints'), 'emailbuilder');
+				Administration::instance()->saveConfig();
 				
 				return true;
 			}
@@ -119,49 +106,109 @@
 		public function getSubscribedDelegates() {
 			return array(
 				array(
-					'page'		=> '/blueprints/events/edit/',
-					'delegate'	=> 'AppendEventFilter',
-					'callback'	=> 'addFilterToEventEditor'
-				),				
-				array(
-					'page'		=> '/blueprints/events/new/',
-					'delegate'	=> 'AppendEventFilter',
-					'callback'	=> 'addFilterToEventEditor'
+					'page' => '/system/preferences/',
+					'delegate' => 'AddCustomPreferenceFieldsets',
+					'callback' => 'viewPreferences'
 				),
 				array(
-					'page'		=> '/frontend/',
-					'delegate'	=> 'EventFinalSaveFilter',
-					'callback'	=> 'eventFinalSaveFilter'
+					'page' => '/system/preferences/',
+					'delegate' => 'Save',
+					'callback' => 'actionsPreferences'
 				),
-				array(
-					'page'		=> '/frontend/',
-					'delegate'	=> 'FrontendPageResolved',
-					'callback'	=> 'setPage'
-				),
-				array(
-					'page'		=> '/frontend/',
-					'delegate'	=> 'FrontendParamsResolve',
-					'callback'	=> 'setParams'
-				)
 			);
 		}
 		
 		public function fetchNavigation() {
+			$group = $this->getNavigationGroup();
+			
 			return array(
 				array(
-					'location'	=> __('Blueprints'),
+					'location'	=> $group,
 					'name'		=> 'Emails',
 					'link'		=> '/emails/'
+				),
+				array(
+					'location'	=> $group,
+					'name'		=> 'Email',
+					'link'		=> '/email/',
+					'visible'	=> 'no'
+				),
+				array(
+					'location'	=> $group,
+					'name'		=> 'Email Logs',
+					'link'		=> '/logs/',
+					'visible'	=> 'no'
 				)
 			);
 		}
 		
-		public function setPage($context) {
-			self::$page = $context['page'];
+		protected $missing_navigation_group;
+		
+		public function getNavigationGroup() {
+			if ($this->missing_navigation_group === true) return null;
+			
+			return Symphony::Configuration()->get('navigation_group', 'emailbuilder');
 		}
 		
-		public function setParams($context) {
-			self::$params = $context['params'];
+		public function getNavigationGroups() {
+			$sectionManager = new SectionManager(Symphony::Engine());
+			$sections = $sectionManager->fetch(null, 'ASC', 'sortorder');
+			$options = array();
+			
+			if (is_array($sections)) foreach ($sections as $section) {
+				$options[] = $section->get('navigation_group');
+			}
+			
+			$options[] = __('Blueprints');
+			$options[] = __('System');
+			
+			return array_unique($options);
+		}
+		
+		public function actionsPreferences($context) {
+			if (
+				!isset($context['settings']['emailbuilder']['navigation_group'])
+				|| trim($context['settings']['emailbuilder']['navigation_group']) == ''
+			) {
+				$context['errors']['emailbuilder']['navigation_group'] = __('This is a required field.');
+				$this->missing_navigation_group = true;
+			}
+		}
+		
+		public function viewPreferences($context) {
+			$wrapper = $context['wrapper'];
+			$errors = Symphony::Engine()->Page->_errors;
+			
+			$fieldset = new XMLElement('fieldset');
+			$fieldset->setAttribute('class', 'settings');
+			$fieldset->appendChild(new XMLElement('legend', __('Email Builder')));
+			
+			$label = Widget::Label(
+				__('Navigation Group')
+				. ' <i>'
+				. __('Created if does not exist')
+				. '</i>'
+			);
+			$label->appendChild(Widget::Input(
+				'settings[emailbuilder][navigation_group]',
+				$this->getNavigationGroup()
+			));
+			
+			if (isset($errors['emailbuilder']['navigation_group'])) {
+				$label = Widget::wrapFormElementWithError($label, $errors['emailbuilder']['navigation_group']);
+			}
+			
+			$fieldset->appendChild($label);
+			
+			$list = new XMLElement('ul');
+			$list->setAttribute('class', 'tags singular');
+			
+			foreach ($this->getNavigationGroups() as $group) {
+				$list->appendChild(new XMLElement('li', $group));
+			}
+			
+			$fieldset->appendChild($list);
+			$wrapper->appendChild($fieldset);
 		}
 	}
 	

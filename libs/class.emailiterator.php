@@ -3,9 +3,9 @@
 	class EmailBuilderEmailIterator extends ArrayIterator {
 		public function __construct() {
 			parent::__construct(
-				Symphony::Database()->fetch("
+				 Symphony::Database()->fetchCol('id', "
 					SELECT
-						t.*
+						t.id
 					FROM
 						`tbl_etf_emails` AS t
 					ORDER BY
@@ -15,7 +15,7 @@
 		}
 		
 		public function current() {
-			return new EmailBuilderEmail(parent::current());
+			return EmailBuilderEmail::load(parent::current());
 		}
 	}
 	

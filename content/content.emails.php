@@ -1,9 +1,8 @@
 <?php
 	
-	require_once(TOOLKIT . '/class.administrationpage.php');
-	require_once(TOOLKIT . '/class.datasourcemanager.php');
+	require_once(EXTENSIONS . '/emailbuilder/libs/class.page.php');
 	
-	class ContentExtensionEmailBuilderEmails extends AdministrationPage {
+	class ContentExtensionEmailBuilderEmails extends EmailBuilderPage {
 		public function action() {
 			$items = (
 				(isset($_POST['items']) && is_array($_POST['items']))
@@ -18,14 +17,13 @@
 		}
 		
 		public function view() {
-			$root_url = dirname(Symphony::Engine()->getCurrentPageURL());
 			$iterator = new EmailBuilderEmailIterator();
 			
 			$this->setPageType('table');
 			$this->setTitle(__('Symphony &ndash; Emails'));
 			
 			$this->appendSubheading('Emails', Widget::Anchor(
-				__('Create New'), $root_url . '/email/',
+				__('Create New'), $this->root_url . '/email/',
 				__('Create a new email'), 'create button'
 			));
 			
@@ -53,12 +51,15 @@
 			}
 			
 			else foreach ($iterator as $email) {
+				$row = new XMLElement('tr');
+				
 				$first_cell = Widget::TableData(
 					Widget::Anchor(
 						$email->data()->name,
 						sprintf(
-							'/%s/email/%d/',
-							$root_url, $email->data()->id
+							'%s/email/%d/',
+							$this->root_url,
+							$email->data()->id
 						)
 					)
 				);
@@ -66,14 +67,12 @@
 					sprintf('items[%d]', $email->data()->id),
 					null, 'checkbox'
 				));
-				$table->appendChild($first_cell);
-				
-				$table->appendChild(Widget::TableData($email->data()->subject));
-				$table->appendChild(Widget::TableData($email->data()->sender_name));
-				$table->appendChild(Widget::TableData($email->data()->sender_address));
-				$table->appendChild(Widget::TableData($email->data()->recipient_address));
-				
-				$table->appendChild(Widget::TableData(
+				$row->appendChild($first_cell);
+				$row->appendChild(Widget::TableData($email->data()->subject));
+				$row->appendChild(Widget::TableData($email->data()->sender_name));
+				$row->appendChild(Widget::TableData($email->data()->sender_address));
+				$row->appendChild(Widget::TableData($email->data()->recipient_address));
+				$row->appendChild(Widget::TableData(
 					Widget::Anchor(
 						sprintf(
 							'%d &rarr;',
@@ -81,10 +80,12 @@
 						),
 						sprintf(
 							'/%s/logs/%d/',
-							$root_url, $email->data()->id
+							$this->root_url,
+							$email->data()->id
 						)
 					)
 				));
+				$table->appendChild($row);
 			}
 			
 			$this->Form->appendChild($table);

@@ -1,11 +1,10 @@
 <?php
 	
-	require_once(TOOLKIT . '/class.administrationpage.php');
-	require_once(TOOLKIT . '/class.datasourcemanager.php');
+	require_once(EXTENSIONS . '/emailbuilder/libs/class.page.php');
 	
-	class ContentExtensionEmailBuilderEmail extends AdministrationPage {
-		protected $email = null;
-		protected $errors = null;
+	class ContentExtensionEmailBuilderEmail extends EmailBuilderPage {
+		protected $email;
+		protected $errors;
 		
 		public function build($context) {
 			// Load existing email:
@@ -22,27 +21,59 @@
 		}
 		
 		public function action() {
-			$root_url = dirname(Symphony::Engine()->getCurrentPageURL());
 			$email = $this->email;
 			
-			// Update email with post data:
-			if (isset($_POST['fields'])) {
-				$email->setData($_POST['fields']);
+			// Delete:
+			if (isset($_POST['action']['delete'])) {
+				if ($email->delete()) {
+					redirect(sprintf(
+						'%s/emails/',
+						$this->root_url
+					));
+				}
+				
+				$this->pageAlert(
+					__('An error occurred while processing this form. <a href="#error">See below for details.</a>'),
+					Alert::ERROR
+				);
 			}
 			
-			if (isset($_POST['overrides'])) {
-				$email->setOverrides($_POST['overrides']);
+			// Edit or create:
+			else {
+				$action = (
+					isset($email->data()->id)
+						? 'saved'
+						: 'created'
+				);
+				
+				// Update email with post data:
+				if (isset($_POST['fields']) && is_array($_POST['fields'])) {
+					$email->setData($_POST['fields']);
+				}
+				
+				if (isset($_POST['overrides'])) {
+					$email->setOverrides($_POST['overrides']);
+				}
+				
+				else {
+					$email->setOverrides(array());
+				}
+				
+				// Email passes validation:
+				if ($email->validate() && $email->save()) {
+					redirect(sprintf(
+						'%s/email/%d/%s/',
+						$this->root_url,
+						$email->data()->id,
+						$action
+					));
+				}
+				
+				$this->pageAlert(
+					__('An error occurred while processing this form. <a href="#error">See below for details.</a>'),
+					Alert::ERROR
+				);
 			}
-			
-			// Email passes validation:
-			if ($email->validate()) {
-				var_dump('-redirect-'); exit;
-			}
-			
-			$this->pageAlert(
-				__('An error occurred while processing this form. <a href="#error">See below for details.</a>'),
-				Alert::ERROR
-			);
 		}
 		
 		public function view() {
@@ -71,6 +102,29 @@
 			$this->appendSubheading($title);
 			$this->addScriptToHead(URL . '/extensions/emailbuilder/assets/email.js');
 			
+			// Status message:
+			if (isset($this->_context[1])) {
+				$action = null;
+				
+				switch ($this->_context[1]) {
+					case 'saved': $action = '%1$s updated at %2$s. <a href="%3$s">Create another?</a> <a href="%4$s">View all %5$s</a>'; break;
+					case 'created': $action = '%1$s created at %2$s. <a href="%3$s">Create another?</a> <a href="%4$s">View all %5$s</a>'; break;
+				}
+				
+				if ($action) $this->pageAlert(
+					__(
+						$action, array(
+							__('Email'), 
+							DateTimeObj::get(__SYM_TIME_FORMAT__), 
+							URL . '/symphony/extension/emailbuilder/email/', 
+							URL . '/symphony/extension/emailbuilder/emails/',
+							__('Emails')
+						)
+					),
+					Alert::SUCCESS
+				);
+			}
+			
 			$this->appendEssentialsFieldset($email, $this->Form);
 			$this->appendContentFieldset($email, $this->Form);
 			$this->appendTemplateFieldset($email, $this->Form);
@@ -80,19 +134,23 @@
 			$div->setAttribute('class', 'actions');
 			$div->appendChild(
 				Widget::Input('action[save]',
-					($this->_editing ? __('Save Changes') : __('Create Template')),
+					(
+						isset($email->data()->id)
+							? __('Save Changes')
+							: __('Create Template')
+					),
 					'submit', array(
 						'accesskey'		=> 's'
 					)
 				)
 			);
 			
-			if ($this->_editing) {
+			if (isset($email->data()->id)) {
 				$button = new XMLElement('button', 'Delete');
 				$button->setAttributeArray(array(
 					'name'		=> 'action[delete]',
-					'class'		=> 'confirm delete',
-					'title'		=> __('Delete this template')
+					'class'		=> 'button confirm delete',
+					'title'		=> __('Delete this email')
 				));
 				$div->appendChild($button);
 			}
@@ -215,7 +273,7 @@
 			// Add existing conditions:
 			foreach ($email->overrides() as $order => $override) {
 				$item = new XMLElement('li');
-				$this->appendOverrideItem($override, $item, order);
+				$this->appendOverrideItem($override, $item, $order);
 				$ol->appendChild($item);
 			}
 			
@@ -335,7 +393,7 @@
 			$wrapper->appendChild($fieldset);
 			
 			// Page
-			$this->appendTemplateFieldset($override, $wrapper, $prefix);
+			//$this->appendTemplateFieldset($override, $wrapper, $prefix);
 		}
 		
 		public function appendTemplateFieldset($email, $wrapper, $prefix = 'fields') {
@@ -350,36 +408,37 @@
 				$help->setValue(__('The <code>%s</code> parameter can be used by any datasources on your template page.', array('$etf-entry-id')));
 				
 				$fieldset->appendChild($help);
-			}
-			
-			// Page:
-			$div = new XMLElement('div');
-			$div->setAttribute('class', 'group');
-			
-			$label = Widget::Label(__('Page'));
-			$options = array(
-				array(null, false, __('Choose one...'))
-			);
-			
-			foreach ($this->getPages() as $page) {
-				$selected = ($page->id == $email->data()->page_id);
-				$options[] = array(
-					$page->id, $selected, $page->path
+				
+				// Page:
+				$div = new XMLElement('div');
+				$div->setAttribute('class', 'group');
+				
+				$label = Widget::Label(__('Page'));
+				$options = array(
+					array(null, false, __('Choose one...'))
 				);
+				
+				foreach ($this->getPages() as $page) {
+					$selected = ($page->id == $email->data()->page_id);
+					$options[] = array(
+						$page->id, $selected, $page->path
+					);
+				}
+				
+				$select = Widget::Select(
+					"{$prefix}[page_id]", $options
+				);
+				$select->setAttribute('class', 'page-picker');
+				$label->appendChild($select);
+				
+				if (isset($email->errors()->page_id)) {
+					$label = Widget::wrapFormElementWithError($label, $email->errors()->page_id);
+				}
+				
+				$div->appendChild($label);
+				$fieldset->appendChild($div);
 			}
 			
-			$select = Widget::Select(
-				"{$prefix}[page_id]", $options
-			);
-			$select->setAttribute('class', 'page-picker');
-			$label->appendChild($select);
-			
-			if (isset($email->errors()->page_id)) {
-				$label = Widget::wrapFormElementWithError($label, $email->errors()->page_id);
-			}
-			
-			$div->appendChild($label);
-			$fieldset->appendChild($div);
 			$wrapper->appendChild($fieldset);
 		}
 		

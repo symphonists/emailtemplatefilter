@@ -6,7 +6,7 @@
 		protected $email;
 		protected $errors;
 		
-		public function getPages() {
+		public function getPageOptions($page_id, $data = array()) {
 			$pages = Symphony::Database()->fetch("
 				SELECT
 					p.*
@@ -35,7 +35,58 @@
 			
 			sort($result);
 			
-			return $result;
+			foreach ($result as $page) {
+				$selected = ($page->id == $page_id);
+				$data[] = array(
+					$page->id, $selected, $page->path
+				);
+			}
+			
+			return $data;
+		}
+		
+		public function getAttachmentOptions($type, $data = array()) {
+			/**
+			 * Ask other extensions for alternative attachments handlers.
+			 *
+			 * @delegate AppendAttachmentHandler
+			 * @param string $context
+			 * '/extension/emailbuilder/'
+			 * @param string $type
+			 * @param array $options
+			 */
+			Symphony::ExtensionManager()->notifyMembers(
+				'AppendAttachmentHandler',
+				'/extension/emailbuilder/',
+				array(
+					'type'		=> &$type,
+					'options' 	=> &$data
+				)
+			);
+			
+			return $data;
+		}
+		
+		public function getPlainTextOptions($type, $data = array()) {
+			/**
+			 * Ask other extensions for alternative plain text handlers.
+			 *
+			 * @delegate AppendPlainTextHandler
+			 * @param string $context
+			 * '/extension/emailbuilder/'
+			 * @param string $type
+			 * @param array $options
+			 */
+			Symphony::ExtensionManager()->notifyMembers(
+				'AppendPlainTextHandler',
+				'/extension/emailbuilder/',
+				array(
+					'type'		=> &$type,
+					'options' 	=> &$data
+				)
+			);
+			
+			return $data;
 		}
 		
 		public function build($context) {
@@ -310,7 +361,7 @@
 			
 			$help = new XMLElement('p');
 			$help->setAttribute('class', 'help');
-			$help->setValue(__('An override changes the above content and template when its expression matches an XML element or is <code>true()</code>.'));
+			$help->setValue(__('An override changes the above content when its expression matches an XML element or is <code>true()</code>.'));
 			
 			$fieldset->appendChild($help);
 			
@@ -456,21 +507,17 @@
 				
 				$fieldset->appendChild($help);
 				
-				// Page:
-				$div = new XMLElement('div');
-				$div->setAttribute('class', 'group');
+				$group = new XMLElement('div');
+				$group->setAttribute('class', 'group');
 				
-				$label = Widget::Label(__('Page'));
-				$options = array(
-					array(null, false, __('Choose one...'))
+				// HTML Page:
+				$label = Widget::Label(__('Template Page'));
+				$options = $this->getPageOptions(
+					$email->data()->page_id,
+					array(
+						array(null, false, __('Choose one...'))
+					)
 				);
-				
-				foreach ($this->getPages() as $page) {
-					$selected = ($page->id == $email->data()->page_id);
-					$options[] = array(
-						$page->id, $selected, $page->path
-					);
-				}
 				
 				$select = Widget::Select(
 					"{$prefix}[page_id]", $options
@@ -482,8 +529,54 @@
 					$label = Widget::wrapFormElementWithError($label, $email->errors()->page_id);
 				}
 				
-				$div->appendChild($label);
-				$fieldset->appendChild($div);
+				$group->appendChild($label);
+				$fieldset->appendChild($group);
+				
+				$group = new XMLElement('div');
+				$group->setAttribute('class', 'group');
+				
+				// Attachments:
+				$label = Widget::Label(__('Attachments'));
+				$options = $this->getAttachmentOptions(
+					$email->data()->send_attachments,
+					array(
+						array(null, false, __('Don\'t send attachments'))
+					)
+				);
+				
+				$select = Widget::Select(
+					"{$prefix}[send_attachments]", $options
+				);
+				$select->setAttribute('class', 'page-picker');
+				$label->appendChild($select);
+				
+				if (isset($email->errors()->send_attachments)) {
+					$label = Widget::wrapFormElementWithError($label, $email->errors()->send_attachments);
+				}
+				
+				$group->appendChild($label);
+				
+				// Plain Text:
+				$label = Widget::Label(__('Plain Text'));
+				$options = $this->getPlainTextOptions(
+					$email->data()->send_plain_text,
+					array(
+						array(null, false, __('Don\'t send plain text'))
+					)
+				);
+				
+				$select = Widget::Select(
+					"{$prefix}[send_plain_text]", $options
+				);
+				$select->setAttribute('class', 'page-picker');
+				$label->appendChild($select);
+				
+				if (isset($email->errors()->send_plain_text)) {
+					$label = Widget::wrapFormElementWithError($label, $email->errors()->send_plain_text);
+				}
+				
+				$group->appendChild($label);
+				$fieldset->appendChild($group);
 			}
 			
 			$wrapper->appendChild($fieldset);

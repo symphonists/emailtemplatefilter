@@ -11,7 +11,9 @@
 			$entryManager = new EntryManager(Symphony::Engine());
 			$sectionManager = new SectionManager(Symphony::Engine());
 			$sections = $sectionManager->fetch(null, 'ASC', 'sortorder');
-			$options = array();
+			$options = array(
+				array(null, false, __('Choose an entry to preview...'))
+			);
 			
 			foreach ($sections as $section) {
 				$entries = $entryManager->fetch(null, $section->get('id'), 5, 0);
@@ -57,8 +59,8 @@
 		}
 		
 		public function action() {
-			if (isset($_POST['preview-selected'])) {
-				$this->entry = $_POST['preview-selected'];
+			if (isset($_POST['entry'])) {
+				$this->entry = $_POST['entry'];
 			}
 		}
 		
@@ -90,16 +92,32 @@
 			$this->addScriptToHead(URL . '/extensions/emailbuilder/assets/preview.js');
 			
 			if ($this->entry) {
-				$url = $email->getPreviewURL($this->entry);
+				$result = $email->fetch($this->entry);
 				
-				$iframe = new XMLElement('iframe');
-				$iframe->setAttribute('src', $url);
-				$this->Form->appendChild($iframe);
+				if (isset($result->body()->html)) {
+					$fieldset = new XMLElement('fieldset');
+					$fieldset->appendChild(new XMLElement('legend', __('HTML Output')));
+					$iframe = new XMLElement('iframe');
+					$iframe->setAttribute('src', sprintf(
+						'data:text/html;base64,%s',
+						base64_encode($result->body()->html)
+					));
+					$fieldset->appendChild($iframe);
+					$this->Form->appendChild($fieldset);
+				}
+				
+				if (isset($result->body()->text)) {
+					$fieldset = new XMLElement('fieldset');
+					$fieldset->appendChild(new XMLElement('legend', __('Plain Text Output')));
+					$iframe = new XMLElement('iframe');
+					$iframe->setAttribute('src', sprintf(
+						'data:text/plain;base64,%s',
+						base64_encode($result->body()->text)
+					));
+					$fieldset->appendChild($iframe);
+					$this->Form->appendChild($fieldset);
+				}
 			}
-			
-			$fieldset = new XMLElement('fieldset');
-			$fieldset->setAttribute('class', 'xsettings');
-			$fieldset->appendChild(new XMLElement('legend', __('Email Preview')));
 			
 			if (isset($url)) {
 				$help = new XMLElement('p');
@@ -108,7 +126,7 @@
 				//$fieldset->appendChild($help);
 			}
 			
-			// Mark current option as selected:
+			// Entry:
 			$options = $this->options;
 			
 			foreach ($options as $index_1 => $section) {
@@ -121,21 +139,19 @@
 				}
 			}
 			
-			$label = new XMLElement('p');
-			$label->setAttribute('class', 'label');
+			$actions = new XMLElement('div');
+			$actions->setAttribute('class', 'actions');
+			$actions->appendChild(
+				Widget::Select('entry', $options)
+			);
+			$actions->appendChild(
+				Widget::Input('action[preview]',
+					__('Update Preview'),
+					'submit'
+				)
+			);
 			
-			$span = new XMLElement('span');
-			$span->appendChild(Widget::Select('preview-selected', $options));
-			$span->appendChild(Widget::Input('action[apply]', __('Preview'), 'submit'));
-			$label->appendChild($span);
-			$fieldset->appendChild($label);
-			
-			$help = new XMLElement('p');
-			$help->setAttribute('class', 'help');
-			$help->setValue(__('Choose one of the available entries above to send to the template page for a preview.'));
-			
-			$fieldset->appendChild($help);
-			$this->Form->appendChild($fieldset);
+			$this->Form->appendChild($actions);
 		}
 	}
 	

@@ -4,6 +4,7 @@
 	require_once(TOOLKIT . '/class.entrymanager.php');
 	require_once(dirname(__FILE__) . '/libs/class.email.php');
 	require_once(dirname(__FILE__) . '/libs/class.emailiterator.php');
+	require_once(dirname(__FILE__) . '/libs/class.emailresult.php');
 	require_once(dirname(__FILE__) . '/libs/class.override.php');
 	
 	class Extension_EmailBuilder extends Extension {
@@ -38,14 +39,18 @@
 				Symphony::Database()->query("
 					CREATE TABLE IF NOT EXISTS `tbl_etf_emails` (
 						`id` int(11) unsigned not null auto_increment,
-						`page_id` int(11) not null,
+						`html_page_id` int(11) not null,
+						`text_page_id` int(11) not null,
+						`xml_page_id` int(11) not null,
 						`name` varchar(255) not null,
 						`subject` text not null,
 						`sender_name` text not null,
 						`sender_address` text not null,
 						`recipient_address` text not null,
 						PRIMARY KEY (`id`),
-						KEY `page_id` (`page_id`)
+						KEY `html_page_id` (`page_id`),
+						KEY `text_page_id` (`text_page_id`),
+						KEY `xml_page_id` (`xml_page_id`)
 					) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 				");
 				$drop[] = 'tbl_etf_emails';
@@ -112,6 +117,21 @@
 					'delegate' => 'Save',
 					'callback' => 'actionsPreferences'
 				),
+				array(
+					'page' => '/extension/emailbuilder/',
+					'delegate' => 'AppendAttachmentHandler',
+					'callback' => 'appendAttachmentHandler'
+				),
+				array(
+					'page' => '/extension/emailbuilder/',
+					'delegate' => 'AppendPlainTextHandler',
+					'callback' => 'appendPlainTextHandler'
+				),
+				array(
+					'page' => '/extension/emailbuilder/',
+					'delegate' => 'BeforeSendEmail',
+					'callback' => 'beforeSendEmail'
+				)
 			);
 		}
 		
@@ -143,6 +163,31 @@
 					'visible'	=> 'no'
 				)
 			);
+		}
+		
+	/*-------------------------------------------------------------------------
+		Handlers:
+	-------------------------------------------------------------------------*/
+		
+		public function appendAttachmentHandler($context) {
+			$context['options'][] = array(
+				'follow_links', $context['type'] == 'follow_links', __('Follow links in HTML')
+			);
+		}
+		
+		public function appendPlainTextHandler($context) {
+			$context['options'][] = array(
+				'strip_html', $context['type'] == 'strip_html', __('Intelligently remove HTML')
+			);
+		}
+		
+		public function beforeSendEmail($context) {
+			$email = $context['email'];
+			$result = $context['result'];
+			
+			if ($email->data()->send_plain_text == 'strip_html') {
+				$result->body()->text = trim(strip_tags($result->body()->html));
+			}
 		}
 		
 	/*-------------------------------------------------------------------------

@@ -116,7 +116,71 @@
 			return array_sum($result) == count($result);
 		}
 		
-		public function getPreviewURL($entry_id) {
+		public function fetch($entry_id) {
+			$url = sprintf(
+				'%s?eb-entry=%d',
+				$this->getPageURL(),
+				$entry_id
+			);
+			
+			// Fetch page:
+			$ch = curl_init();
+			curl_setopt_array($ch, array(
+				CURLOPT_URL				=> $url,
+				CURLOPT_TIMEOUT			=> 10,
+				CURLOPT_HEADER			=> false,
+				CURLOPT_FOLLOWLOCATION	=> true,
+				CURLOPT_RETURNTRANSFER	=> true,
+				CURLOPT_USERAGENT		=> 'Email Builder/1.0'
+			));
+			$html = curl_exec($ch);
+			$info = curl_getinfo($ch);
+			curl_close($ch);
+			
+			// Check for invalid response:
+			switch ($info['http_code']) {
+				case 200:
+				case 301:
+				case 302:
+					break;
+				default:
+					throw new Exception(sprintf(
+						"Unable to load template '%s' status code '%d' returned.",
+						$url, $info['http_code']
+					));
+			}
+			
+			$email = new EmailBuilderEmailResult();
+			$email->body()->html = $html;
+			$email->headers()->subject = $this->data->subject;
+			$email->headers()->sender_name = $this->data->sender_name;
+			$email->headers()->sender_email_address = $this->data->sender_address;
+			$email->headers()->recipient_address = $this->data->recipient_address;
+			
+			/**
+			 * Allow email to be tweaked before being sent.
+			 *
+			 * @delegate BeforeSendEmail
+			 * @param string $context
+			 * '/extension/emailbuilder/'
+			 * @param object $email
+			 * @param object $result
+			 * @param string $url
+			 */
+			Symphony::ExtensionManager()->notifyMembers(
+				'BeforeSendEmail',
+				'/extension/emailbuilder/',
+				array(
+					'email'			=> $this,
+					'result'		=> $email,
+					'url' 			=> $url
+				)
+			);
+			
+			return $email;
+		}
+		
+		public function getPageURL() {
 			$page = Symphony::Database()->fetchRow(0, sprintf("
 				SELECT
 					p.path,
@@ -131,10 +195,7 @@
 			
 			$path = trim(rtrim($page['path'], '/') . '/' . $page['handle'], '/');
 			
-			return sprintf(
-				'%s/%s?eb-entry-id=%d',
-				URL, $path, $entry_id
-			);
+			return rtrim(sprintf('%s/%s', URL, $path), '/');
 		}
 		
 		public function setData($data) {
@@ -163,7 +224,9 @@
 				'subject'			=> null,
 				'sender_name'		=> null,
 				'sender_address'	=> null,
-				'recipient_address'	=> null
+				'recipient_address'	=> null,
+				'send_plain_text'	=> null,
+				'send_attachments'	=> null
 			);
 			
 			foreach ($fields as $key => $value) {

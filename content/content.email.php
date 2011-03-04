@@ -6,6 +6,38 @@
 		protected $email;
 		protected $errors;
 		
+		public function getPages() {
+			$pages = Symphony::Database()->fetch("
+				SELECT
+					p.*
+				FROM
+					`tbl_pages` AS p
+				ORDER BY
+					`sortorder` ASC
+			");
+			$result = array();
+			
+			foreach ($pages as $page) {
+				$page = (object)$page;
+				$path = '';
+				
+				if ($page->path) {
+					$path = '/' . $page->path;
+				}
+				
+				$path .= '/' . $page->handle;
+				
+				$result[] = (object)array(
+					'id'	=> $page->id,
+					'path'	=> $path
+				);
+			}
+			
+			sort($result);
+			
+			return $result;
+		}
+		
 		public function build($context) {
 			// Load existing email:
 			if (isset($context[0]) && EmailBuilderEmail::exists($context[0])) {
@@ -95,11 +127,26 @@
 				),
 				array(
 					__('Symphony'),
-					__('Pages'),
+					__('Emails'),
 					$title
 				)
 			));
-			$this->appendSubheading($title);
+			$this->appendSubheading($title, (
+				(
+					isset($email->data()->id)
+						?  Widget::Anchor(
+							__('Preview'),
+							sprintf(
+								'%s/preview/%d/',
+								$this->root_url,
+								$email->data()->id
+							),
+							__('Preview email'),
+							'button'
+						)
+						: null
+				)
+			));
 			$this->addScriptToHead(URL . '/extensions/emailbuilder/assets/email.js');
 			
 			// Status message:
@@ -440,38 +487,6 @@
 			}
 			
 			$wrapper->appendChild($fieldset);
-		}
-		
-		public function getPages() {
-			$pages = Symphony::Database()->fetch("
-				SELECT
-					p.*
-				FROM
-					`tbl_pages` AS p
-				ORDER BY
-					`sortorder` ASC
-			");
-			$result = array();
-			
-			foreach ($pages as $page) {
-				$page = (object)$page;
-				$path = '';
-				
-				if ($page->path) {
-					$path = '/' . $page->path;
-				}
-				
-				$path .= '/' . $page->handle;
-				
-				$result[] = (object)array(
-					'id'	=> $page->id,
-					'path'	=> $path
-				);
-			}
-			
-			sort($result);
-			
-			return $result;
 		}
 	}
 	

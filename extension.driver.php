@@ -11,9 +11,6 @@
 		Definition:
 	-------------------------------------------------------------------------*/
 		
-		public static $params = array();
-		public static $page = null;
-		
 		public function about() {
 			return array(
 				'name'			=> 'Email Builder',
@@ -138,9 +135,19 @@
 					'name'		=> 'Email Logs',
 					'link'		=> '/logs/',
 					'visible'	=> 'no'
+				),
+				array(
+					'location'	=> $group,
+					'name'		=> 'Email Preview',
+					'link'		=> '/preview/',
+					'visible'	=> 'no'
 				)
 			);
 		}
+		
+	/*-------------------------------------------------------------------------
+		Preferences:
+	-------------------------------------------------------------------------*/
 		
 		protected $missing_navigation_group;
 		

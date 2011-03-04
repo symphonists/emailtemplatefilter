@@ -225,7 +225,7 @@
 			
 			$this->appendEssentialsFieldset($email, $this->Form);
 			$this->appendContentFieldset($email, $this->Form);
-			$this->appendTemplateFieldset($email, $this->Form);
+			//$this->appendTemplateFieldset($email, $this->Form);
 			$this->appendOverridesFieldset($email, $this->Form);
 			
 			$div = new XMLElement('div');
@@ -351,6 +351,84 @@
 			}
 			
 			$fieldset->appendChild($label);
+			
+			$group = new XMLElement('div');
+			$group->setAttribute('class', 'group');
+			
+			// Attachments:
+			$label = Widget::Label(__('Attachments'));
+			$options = $this->getAttachmentOptions(
+				$email->data()->send_attachments,
+				array(
+					array(null, false, __('Don\'t send attachments'))
+				)
+			);
+			
+			$select = Widget::Select(
+				"fields[send_attachments]", $options
+			);
+			$select->setAttribute('class', 'page-picker');
+			$label->appendChild($select);
+			
+			if (isset($email->errors()->send_attachments)) {
+				$label = Widget::wrapFormElementWithError($label, $email->errors()->send_attachments);
+			}
+			
+			$group->appendChild($label);
+			
+			// Plain Text:
+			$label = Widget::Label(__('Plain Text'));
+			$options = $this->getPlainTextOptions(
+				$email->data()->send_plain_text,
+				array(
+					array(null, false, __('Don\'t send plain text'))
+				)
+			);
+			
+			$select = Widget::Select(
+				"fields[send_plain_text]", $options
+			);
+			$select->setAttribute('class', 'page-picker');
+			$label->appendChild($select);
+			
+			if (isset($email->errors()->send_plain_text)) {
+				$label = Widget::wrapFormElementWithError($label, $email->errors()->send_plain_text);
+			}
+			
+			$group->appendChild($label);
+			$fieldset->appendChild($group);
+			
+			$group = new XMLElement('div');
+			$group->setAttribute('class', 'group');
+			
+			// HTML Page:
+			$label = Widget::Label(__('Template Page'));
+			$options = $this->getPageOptions(
+				$email->data()->page_id,
+				array(
+					array(null, false, __('Choose one...'))
+				)
+			);
+			
+			$select = Widget::Select(
+				"fields[page_id]", $options
+			);
+			$select->setAttribute('class', 'page-picker');
+			$label->appendChild($select);
+			
+			if (isset($email->errors()->page_id)) {
+				$label = Widget::wrapFormElementWithError($label, $email->errors()->page_id);
+			}
+			
+			$group->appendChild($label);
+			$fieldset->appendChild($group);
+			
+			$help = new XMLElement('p');
+			$help->setAttribute('class', 'help');
+			$help->setAttribute('style', 'clear: both;');
+			$help->setValue(__('The <code>%s</code> parameter can be used by any datasources on your template page.', array('$etf-entry-id')));
+			
+			$fieldset->appendChild($help);
 			$wrapper->appendChild($fieldset);
 		}
 		

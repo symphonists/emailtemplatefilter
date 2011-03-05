@@ -39,18 +39,16 @@
 				Symphony::Database()->query("
 					CREATE TABLE IF NOT EXISTS `tbl_etf_emails` (
 						`id` int(11) unsigned not null auto_increment,
-						`html_page_id` int(11) not null,
-						`text_page_id` int(11) not null,
-						`xml_page_id` int(11) not null,
+						`page_id` int(11) not null,
 						`name` varchar(255) not null,
 						`subject` text not null,
 						`sender_name` text not null,
 						`sender_address` text not null,
 						`recipient_address` text not null,
+						`send_attachments` varchar(255),
+						`send_plain_text` varchar(255),
 						PRIMARY KEY (`id`),
-						KEY `html_page_id` (`page_id`),
-						KEY `text_page_id` (`text_page_id`),
-						KEY `xml_page_id` (`xml_page_id`)
+						KEY `page_id` (`page_id`)
 					) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 				");
 				$drop[] = 'tbl_etf_emails';

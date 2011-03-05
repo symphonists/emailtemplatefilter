@@ -46,7 +46,7 @@
 					Widget::TableData(
 						__('None Found.'),
 						'inactive',
-						null, 6
+						null, 7
 					)
 				)));
 			}

@@ -373,8 +373,18 @@
 					$results = @$xpath->query(trim($match, '{}'));
 					
 					if ($results->length) {
-						$replacements[$match] = $results->item(0)->nodeValue;
-					} else {
+						$items = array();
+						
+						foreach ($results as $item) {
+							if (!isset($item->nodeValue)) continue;
+							
+							$items[] = $item->nodeValue;
+						}
+						
+						$replacements[$match] = implode(', ', $items);
+					}
+					
+					else {
 						$replacements[$match] = '';
 					}
 				}
@@ -403,6 +413,9 @@
 			$email['message'] = (string)file_get_contents($generator);
 			$email['condition_id'] = $email['id'];
 			$email['entry_id'] = $entry_id;
+			$email['recipients'] = array_unique(preg_split(
+				'/\s*[,]\s*/', $email['recipients']
+			));
 			
 			// Remove junk:
 			unset($email['id']);
@@ -436,6 +449,7 @@
 			// Log the email:
 			$email['success'] = ($success ? 'yes' : 'no');
 			$email['date'] = DateTimeObj::get('c');
+			$email['recipients'] = implode(', ', $email['recipients']);
 			
 			Symphony::Database()->insert($email, 'tbl_etf_logs');
 			

@@ -434,7 +434,7 @@
 				$send->sender_email_address = $email['senders'];
 				$send->subject = $email['subject'];
 				$send->text_html = $email['message'];
-				$send->attachments = $this->findAttachments($send);
+				$send->attachments = $this->findAttachments($email);
 				$send->send();
 				$success = true;
 			}
@@ -459,7 +459,7 @@
 
 		public function findAttachments($email) {
 			$document = new DOMDocument();
-			$document->loadHTML($email->text_html);
+			$document->loadHTML($email['message']);
 			$xpath = new DOMXPath($document);
 			$attachments = array();
 
@@ -471,9 +471,14 @@
 					$attachments[] = realpath(DOCROOT . '/' . $path);
 				}
 
-				// Absolute path or URL:
-				else {
+				// Absolute path:
+				else if (strpos($path, '/') === 0) {
 					$attachments[] = $path;
+				}
+
+				// URLs:
+				else {
+					$attachments[] = str_replace(URL, DOCROOT, $path);
 				}
 			}
 

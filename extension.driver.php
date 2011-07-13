@@ -463,7 +463,7 @@
 			$xpath = new DOMXPath($document);
 			$attachments = array();
 
-			foreach ($xpath->query('//link[rel = "attachment"]') as $node) {
+			foreach ($xpath->query('//link[@rel = "attachment"]') as $node) {
 				$path = $node->getAttribute('href');
 
 				// Relative to root:

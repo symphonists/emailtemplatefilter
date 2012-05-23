@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension id="emailtemplatefilter" status="released" xmlns="http://symphony-cms.com/schemas/extension/1.0">
+	<name>Email Template Filter</name>
+	<description>Easy way to send HTML emails</description>
+	<repo type="github">https://github.com/symphonists/emailtemplatefilter</repo>
+	<url type="discuss">http://symphony-cms.com/discuss/thread/477/</url>
+	<types>
+		<type>Events</type>
+	</types>
+	<authors>
+		<author>
+			<name github="symphonists" symphony="community">Symphony Community</name>
+		</author>
+		<author>
+			<name github="rowan-lewis" symphony="buzzomatic">Rowan Lewis</name>
+			<website>http://nbsp.io/</website>
+		</author>
+	</authors>
+	<releases>
+		<release version="1.1.1" date="2012-05-23" min="2.2" />
+		<release version="1.1.0" date="2011-03-03" min="2.2" />
+	</releases>
+</extension>

@@ -14,8 +14,8 @@
 		public function about() {
 			return array(
 				'name'			=> 'Filter: Email Template',
-				'version'		=> '1.1.0',
-				'release-date'	=> '2011-03-01',
+				'version'		=> '1.1.1',
+				'release-date'	=> '2012-05-23',
 				'author'		=> array(
 					'name'			=> 'Rowan Lewis',
 					'website'		=> 'http://rowanlewis.com/',

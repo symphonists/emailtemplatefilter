@@ -143,7 +143,43 @@
 		}
 
 		public function setPage($context) {
-			self::$page = $context['page'];
+			// Check to see if the page has 'etf' page type
+			if(is_array($context['page_data']['type']) && in_array('etf', $context['page_data']['type'])) {
+				// Check to see that the page has been requested by someone who is logged in
+				// or someone who has passed the ETF header
+				if(
+					(isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] == 'EmailTemplateFilter')
+					|| Frontend::instance()->isLoggedIn() && Frontend::instance()->Author->isDeveloper()
+				) {
+					// All good!
+					self::$page = $context['page'];
+				}
+				else {
+					$row = Symphony::Database()->fetchRow(0, "
+						SELECT `tbl_pages`.*
+						FROM `tbl_pages`, `tbl_pages_types`
+						WHERE `tbl_pages_types`.page_id = `tbl_pages`.id
+						AND tbl_pages_types.`type` = '403'
+						LIMIT 1
+					");
+
+					if($row) {
+						$row['type'] = FrontendPage::fetchPageTypes($row['id']);
+						$row['filelocation'] = FrontendPage::resolvePageFileLocation($row['path'], $row['handle']);
+						$context['page_data'] = $row;
+						return;
+					}
+					else {
+						GenericExceptionHandler::$enabled = true;
+						throw new SymphonyErrorPage(
+							__('Please <a href="%s">login</a> to view this page.', array(SYMPHONY_URL . '/login/')),
+							__('Forbidden'),
+							'error',
+							array('header' => 'HTTP/1.0 403 Forbidden')
+						);
+					}
+	 			}
+			}
 		}
 
 		public function setParams($context) {
@@ -343,9 +379,11 @@
 				$data->appendChild($params);
 			}
 
-			self::$page->processDatasources($template['datasources'], $data, array(
-				'etf-entry-id'	=> $entry_id
-			));
+			if(!is_null(self::$page)) {
+				self::$page->processDatasources($template['datasources'], $data, array(
+					'etf-entry-id' => $entry_id
+				));
+			}
 
 			$dom = new DOMDocument();
 			$dom->loadXML($data->generate(true));
@@ -424,8 +462,15 @@
 			$params = trim($email['params'], '/');
 			$generator = "{$generator}/{$params}/";
 
+			// Fetch generator
+			require_once TOOLKIT . '/class.gateway.php';
+			$ch = new Gateway;
+			$ch->init($generator);
+			$ch->setopt('HTTPHEADER', array('X-REQUESTED-WITH: EmailTemplateFilter'));
+			$message = $ch->exec();
+
 			// Add values:
-			$email['message'] = (string)file_get_contents($generator);
+			$email['message'] = (string)$message;
 			$email['condition_id'] = $email['id'];
 			$email['entry_id'] = $entry_id;
 			$email['recipients'] = array_unique(preg_split(

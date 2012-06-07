@@ -14,8 +14,8 @@
 		public function about() {
 			return array(
 				'name'			=> 'Filter: Email Template',
-				'version'		=> '1.1.1',
-				'release-date'	=> '2012-05-23',
+				'version'		=> '1.2',
+				'release-date'	=> '2012-06-07',
 				'author'		=> array(
 					'name'			=> 'Rowan Lewis',
 					'website'		=> 'http://rowanlewis.com/',
@@ -52,6 +52,8 @@
 					`sender` varchar(255) NOT NULL,
 					`senders` varchar(255) NOT NULL,
 					`recipients` varchar(255) NOT NULL,
+					`reply_to` varchar(255),
+					`reply_to_email` varchar(255),
 					`page` int(11) NOT NULL,
 					`params` varchar(255),
 					PRIMARY KEY (`id`)
@@ -69,6 +71,8 @@
 					`subject` varchar(255),
 					`sender` varchar(255),
 					`senders` varchar(255),
+					`reply_to` varchar(255),
+					`reply_to_email` varchar(255),
 					`recipients` varchar(255),
 					`message` text,
 					PRIMARY KEY (`id`)
@@ -76,6 +80,17 @@
 			");
 
 			return true;
+		}
+
+		public function update($previousVersion) {
+			if(version_compare($previousVersion, '1.2', '<')) {
+				Symphony::Database()->import("
+					ALTER TABLE `tbl_etf_conditions` ADD `reply_to` varchar(255);
+					ALTER TABLE `tbl_etf_conditions` ADD `reply_to_email` varchar(255);
+					ALTER TABLE `tbl_etf_logs` ADD `reply_to` varchar(255);
+					ALTER TABLE `tbl_etf_logs` ADD `reply_to_email` varchar(255);
+				");
+			}
 		}
 
 		public function getSubscribedDelegates() {
@@ -416,6 +431,8 @@
 			$email['recipients'] = array_unique(preg_split(
 				'/\s*[,]\s*/', $email['recipients']
 			));
+			$email['reply_to'] = (isset($email['reply_to'])) ? $email['reply_to'] : $email['sender'];
+			$email['reply_to_email'] = (isset($email['reply_to_email'])) ? $email['reply_to_email'] : $email['senders'];
 
 			// Remove junk:
 			unset($email['id']);
@@ -432,6 +449,8 @@
 				$send->recipients = $email['recipients'];
 				$send->sender_name = $email['sender'];
 				$send->sender_email_address = $email['senders'];
+				$send->reply_to_name = $email['reply_to'];
+				$send->reply_to_email_address = $email['reply_to_email'];
 				$send->subject = $email['subject'];
 				$send->text_html = $email['message'];
 				$send->attachments = $this->findAttachments($email);
@@ -485,5 +504,3 @@
 			return $attachments;
 		}
 	}
-
-?>

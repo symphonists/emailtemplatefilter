@@ -17,10 +17,10 @@
 		protected $_uri = null;
 		protected $_valid = true;
 
-		public function __construct($parent) {
-			parent::__construct($parent);
+		public function __construct() {
+			parent::__construct();
 
-			$this->_uri = URL . '/symphony/extension/emailtemplatefilter';
+			$this->_uri = SYMPHONY_URL . '/extension/emailtemplatefilter';
 			$this->_driver = Symphony::ExtensionManager()->create('emailtemplatefilter');
 		}
 
@@ -169,8 +169,8 @@
 						$action, array(
 							__('Template'),
 							DateTimeObj::get(__SYM_TIME_FORMAT__),
-							URL . '/symphony/extension/emailtemplatefilter/templates/new/',
-							URL . '/symphony/extension/emailtemplatefilter/templates/',
+							SYMPHONY_URL . '/extension/emailtemplatefilter/templates/new/',
+							SYMPHONY_URL . '/extension/emailtemplatefilter/templates/',
 							__('Templates')
 						)
 					),
@@ -206,8 +206,10 @@
 			$this->setTitle(__('Symphony &ndash; Email Templates') . (
 				$this->_editing ? ' &ndash; ' . $this->_fields['name'] : null
 			));
-			$this->appendSubheading("<a href=\"{$this->_uri}/templates/\">Templates</a> &mdash; " . (
-				$this->_editing ? $this->_fields['name'] : __('Untitled')
+
+			$this->appendSubheading($this->_editing ? $this->_fields['name'] : __('Untitled'));
+			$this->insertBreadcrumbs(array(
+				Widget::Anchor(__('Templates'), $this->_uri . '/templates/'),
 			));
 
 		// Form: --------------------------------------------------------------
@@ -227,15 +229,14 @@
 			));
 
 			if (isset($this->_errors['name'])) {
-				$label = Widget::wrapFormElementWithError($label, $this->_errors['name']);
+				$label = Widget::Error($label, $this->_errors['name']);
 			}
 
 			$fieldset->appendChild($label);
 
 		// Datasources --------------------------------------------------------
 
-			$DSManager = new DatasourceManager(Symphony::Engine());
-			$datasources = $DSManager->listAll();
+			$datasources = DatasourceManager::listAll();
 			$handles = explode(',', $this->_fields['datasources']);
 
 			$options = array();
@@ -324,7 +325,9 @@
 		}
 
 		protected function displayCondition(&$wrapper, $sortorder, $condition) {
-			$wrapper->appendChild(new XMLElement('h4', ucwords($condition['type'])));
+			$wrapper->appendChild(
+				new XMLElement('header', '<h4>' . ucwords($condition['type'] . '</h4>'))
+			);
 			$wrapper->appendChild(Widget::Input("conditions[{$sortorder}][type]", $condition['type'], 'hidden'));
 
 			if (!empty($condition['id'])) {
@@ -340,7 +343,7 @@
 			));
 
 			if (isset($this->_errors["{$sortorder}:subject"])) {
-				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:subject"]);
+				$label = Widget::Error($label, $this->_errors["{$sortorder}:subject"]);
 			}
 
 			$wrapper->appendChild($label);
@@ -354,7 +357,7 @@
 			));
 
 			if (isset($this->_errors["{$sortorder}:sender"])) {
-				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:sender"]);
+				$label = Widget::Error($label, $this->_errors["{$sortorder}:sender"]);
 			}
 
 			$wrapper->appendChild($label);
@@ -368,7 +371,7 @@
 			));
 
 			if (isset($this->_errors["{$sortorder}:senders"])) {
-				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:senders"]);
+				$label = Widget::Error($label, $this->_errors["{$sortorder}:senders"]);
 			}
 
 			$wrapper->appendChild($label);
@@ -404,7 +407,7 @@
 			));
 
 			if (isset($this->_errors["{$sortorder}:recipients"])) {
-				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:recipients"]);
+				$label = Widget::Error($label, $this->_errors["{$sortorder}:recipients"]);
 			}
 
 			$help = new XMLElement('p');
@@ -428,7 +431,7 @@
 			));
 
 			if (isset($this->_errors["{$sortorder}:expression"])) {
-				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:expression"]);
+				$label = Widget::Error($label, $this->_errors["{$sortorder}:expression"]);
 			}
 
 			$wrapper->appendChild($label);
@@ -452,7 +455,7 @@
 			));
 
 			if (isset($this->_errors["{$sortorder}:page"])) {
-				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:page"]);
+				$label = Widget::Error($label, $this->_errors["{$sortorder}:page"]);
 			}
 
 			$div->appendChild($label);
@@ -466,7 +469,7 @@
 			));
 
 			if (isset($this->_errors["{$sortorder}:params"])) {
-				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:params"]);
+				$label = Widget::Error($label, $this->_errors["{$sortorder}:params"]);
 			}
 
 			$div->appendChild($label);
@@ -513,7 +516,7 @@
 			$this->setPageType('table');
 			$this->setTitle(__('Symphony &ndash; Email Templates'));
 
-			$this->appendSubheading('Templates', Widget::Anchor(
+			$this->appendSubheading(__('Templates'), Widget::Anchor(
 				__('Create New'), "{$this->_uri}/templates/new/",
 				__('Create a new email template'), 'create button'
 			));
@@ -571,9 +574,7 @@
 				array('delete', false, __('Delete'))
 			);
 
-			$actions->appendChild(Widget::Select('with-selected', $options));
-			$actions->appendChild(Widget::Input('action[apply]', __('Apply'), 'submit'));
-
+			$actions->appendChild(Widget::Apply($options));
 			$this->Form->appendChild($actions);
 		}
 	}

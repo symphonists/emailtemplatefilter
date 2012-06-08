@@ -11,19 +11,6 @@
 		public static $params = array();
 		public static $page = null;
 
-		public function about() {
-			return array(
-				'name'			=> 'Filter: Email Template',
-				'version'		=> '1.2',
-				'release-date'	=> '2012-06-07',
-				'author'		=> array(
-					'name'			=> 'Rowan Lewis',
-					'website'		=> 'http://rowanlewis.com/',
-					'email'			=> 'me@rowanlewis.com'
-				)
-			);
-		}
-
 		public function uninstall() {
 			Symphony::Database()->query("DROP TABLE `tbl_etf_templates`");
 			Symphony::Database()->query("DROP TABLE `tbl_etf_conditions`");
@@ -38,7 +25,7 @@
 					`conditions` int(11) unsigned default NULL,
 					`datasources` text default NULL,
 					PRIMARY KEY (`id`)
-				)
+				) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 			");
 
 			Symphony::Database()->query("
@@ -57,7 +44,7 @@
 					`page` int(11) NOT NULL,
 					`params` varchar(255),
 					PRIMARY KEY (`id`)
-				)
+				) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 			");
 
 			Symphony::Database()->query("
@@ -76,7 +63,7 @@
 					`recipients` varchar(255),
 					`message` text,
 					PRIMARY KEY (`id`)
-				)
+				) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 			");
 
 			return true;
@@ -127,14 +114,14 @@
 			return array(
 				array(
 					'location'	=> 250,
-					'name'		=> 'Emails',
+					'name'		=> __('Emails'),
 					'children'	=> array(
 						array(
-							'name'		=> 'Templates',
+							'name'		=> __('Templates'),
 							'link'		=> '/templates/'
 						),
 						array(
-							'name'		=> 'Logs',
+							'name'		=> __('Logs'),
 							'link'		=> '/logs/'
 						)
 					)
@@ -155,21 +142,16 @@
 					self::$page = $context['page'];
 				}
 				else {
-					$row = Symphony::Database()->fetchRow(0, "
-						SELECT `tbl_pages`.*
-						FROM `tbl_pages`, `tbl_pages_types`
-						WHERE `tbl_pages_types`.page_id = `tbl_pages`.id
-						AND tbl_pages_types.`type` = '403'
-						LIMIT 1
-					");
+					// User has no access to this page, so look for a custom 403 page
+					if($row = PageManager::fetchPageByType('403')) {
+						$row['type'] = PageManager::fetchPageTypes($row['id']);
+						$row['filelocation'] = PageManager::resolvePageFileLocation($row['path'], $row['handle']);
 
-					if($row) {
-						$row['type'] = FrontendPage::fetchPageTypes($row['id']);
-						$row['filelocation'] = FrontendPage::resolvePageFileLocation($row['path'], $row['handle']);
 						$context['page_data'] = $row;
 						return;
 					}
 					else {
+						// No custom 403, just throw default 403
 						GenericExceptionHandler::$enabled = true;
 						throw new SymphonyErrorPage(
 							__('Please <a href="%s">login</a> to view this page.', array(SYMPHONY_URL . '/login/')),
@@ -228,7 +210,7 @@
 		}
 
 		public function getLogs($page) {
-			$start = ($page - 1) * 17;
+			$start = ($page - 1) * Symphony::Configuration()->get('pagination_maximum_rows', 'symphony');
 
 			return Symphony::Database()->fetch("
 				SELECT

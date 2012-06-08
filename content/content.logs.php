@@ -14,8 +14,8 @@
 		protected $_driver = null;
 		protected $_conditions = array();
 
-		public function __construct(&$parent){
-			parent::__construct($parent);
+		public function __construct(){
+			parent::__construct();
 
 			$this->_driver = Symphony::ExtensionManager()->create('emailtemplatefilter');
 		}
@@ -28,9 +28,7 @@
 			);
 
 			header('content-type: text/html; charset=utf-8');
-
 			echo $log['message'];
-
 			exit;
 		}
 
@@ -53,16 +51,16 @@
 							");
 						}
 
-						redirect(URL . '/symphony/extension/emailtemplatefilter/logs/');
+						redirect(SYMPHONY_URL . '/extension/emailtemplatefilter/logs/');
 						break;
 				}
 			}
 		}
 
 		public function __viewIndex() {
-			$this->setPageType('table');
-			$this->setTitle('Symphony &ndash; Email Logs');
-			$this->appendSubheading('Logs');
+			$this->setPageType('index');
+			$this->setTitle(__('Symphony') . ' &ndash; ' . __('Email Logs'));
+			$this->appendSubheading(__('Email Logs'));
 
 			$page = (
 				isset($_GET['pg']) && (integer)$_GET['pg'] > 1
@@ -70,13 +68,11 @@
 					: 1
 			);
 			$logs = $this->_driver->getLogs($page);
-			$start = max(1, (($page - 1) * 17));
-			$end = ($start == 1 ? 17 : $start + count($logs));
+			$limit = Symphony::Configuration()->get('pagination_maximum_rows', 'symphony');
+			$start = max(1, (($page - 1) * $limit));
+			$end = ($start == 1 ? $limit : $start + count($logs));
 			$total = $this->_driver->countLogs();
-			$pages = ceil($total / 17);
-
-			$sectionManager = new SectionManager(Symphony::Engine());
-			$entryManager = new EntryManager(Symphony::Engine());
+			$pages = ceil($total / $limit);
 
 			$tableHead = array(
 				array('Date', 'col'),
@@ -85,7 +81,6 @@
 				array('Senders', 'col'),
 				array('Recipients', 'col'),
 				array('Template', 'col'),
-				//array('Section', 'col'),
 				array('Entry', 'col')
 			);
 
@@ -103,7 +98,7 @@
 				$col_date = Widget::TableData(
 					Widget::Anchor(
 						DateTimeObj::get(__SYM_DATETIME_FORMAT__, strtotime($log_date)),
-						URL . "/symphony/extension/emailtemplatefilter/logs/preview/{$log_id}/"
+						SYMPHONY_URL . "/extension/emailtemplatefilter/logs/preview/{$log_id}/"
 					)
 				);
 				$col_date->appendChild(Widget::Input("items[{$log_id}]", null, 'checkbox'));
@@ -115,7 +110,7 @@
 				}
 
 				else {
-					$col_subject = Widget::TableData('None', 'inactive');
+					$col_subject = Widget::TableData(__('None'), 'inactive');
 				}
 
 				if (!empty($log_sender)) {
@@ -125,7 +120,7 @@
 				}
 
 				else {
-					$col_sender = Widget::TableData('None', 'inactive');
+					$col_sender = Widget::TableData(__('None'), 'inactive');
 				}
 
 				if (!empty($log_senders)) {
@@ -135,7 +130,7 @@
 				}
 
 				else {
-					$col_senders = Widget::TableData('None', 'inactive');
+					$col_senders = Widget::TableData(__('None'), 'inactive');
 				}
 
 				if (!empty($log_recipients)) {
@@ -145,47 +140,37 @@
 				}
 
 				else {
-					$col_recipients = Widget::TableData('None', 'inactive');
+					$col_recipients = Widget::TableData(__('None'), 'inactive');
 				}
 
 				if ($template = $this->_driver->getTemplate($log_template_id)) {
 					$col_template = Widget::TableData(
 						Widget::Anchor(
 							General::sanitize($template['name']),
-							URL . "/symphony/extension/emailtemplatefilter/templates/edit/{$log_template_id}/"
+							SYMPHONY_URL . "/extension/emailtemplatefilter/templates/edit/{$log_template_id}/"
 						)
 					);
 				}
 
 				else {
-					$col_template = Widget::TableData('None', 'inactive');
+					$col_template = Widget::TableData(__('None'), 'inactive');
 				}
 
-				$entries = $entryManager->fetch($log_entry_id, null, null, null, null, null, false, true);
+				$entries = EntryManager::fetch($log_entry_id, null, null, null, null, null, false, true);
 
 				if (!empty($entries) and $entry = $entries[0]) {
 					$section_id = $entry->get('section_id');
-					$section = $sectionManager->fetch($section_id);
+					$section = SectionManager::fetch($section_id);
 					$column = array_shift($section->fetchVisibleColumns());
 
 					$data = $entry->getData($column->get('id'));
-					$link = Widget::Anchor('None', URL . '/symphony/publish/' . $section->get('handle') . '/edit/' . $entry->get('id') . '/', $entry->get('id'), 'content');
-
-					/*
-					$col_section = Widget::TableData(
-						Widget::Anchor(
-							General::sanitize($section->get('name')),
-							URL . '/symphony/publish/' . $section->get('handle') . '/'
-						)
-					);
-					*/
+					$link = Widget::Anchor(__('None'), SYMPHONY_URL . '/publish/' . $section->get('handle') . '/edit/' . $entry->get('id') . '/', $entry->get('id'), 'content');
 
 					$col_entry = Widget::TableData($column->prepareTableValue($data, $link));
 				}
 
 				else {
-					//$col_section = Widget::TableData('None', 'inactive');
-					$col_entry = Widget::TableData('None', 'inactive');
+					$col_entry = Widget::TableData(__('None'), 'inactive');
 				}
 
 				$tableBody[] = Widget::TableRow(
@@ -209,12 +194,11 @@
 			$actions->setAttribute('class', 'actions');
 
 			$options = array(
-				array(null, false, 'With Selected...'),
-				array('delete', false, 'Delete')
+				array(null, false, __('With Selected...')),
+				array('delete', false, __('Delete'))
 			);
 
-			$actions->appendChild(Widget::Select('with-selected', $options));
-			$actions->appendChild(Widget::Input('action[apply]', 'Apply', 'submit'));
+			$actions->appendChild(Widget::Apply($options));
 
 			$this->Form->appendChild($actions);
 
@@ -228,12 +212,12 @@
 
 				if ($page > 1) {
 					$li->appendChild(
-						Widget::Anchor('First', Symphony::Engine()->getCurrentPageURL() . '?pg=1')
+						Widget::Anchor(__('First'), Symphony::Engine()->getCurrentPageURL() . '?pg=1')
 					);
 				}
 
 				else {
-					$li->setValue('First');
+					$li->setValue(__('First'));
 				}
 
 				$ul->appendChild($li);
@@ -243,21 +227,19 @@
 
 				if ($page > 1) {
 					$li->appendChild(
-						Widget::Anchor('&larr; Previous', Symphony::Engine()->getCurrentPageURL(). '?pg=' . ($page - 1))
+						Widget::Anchor(__('&larr; Previous'), Symphony::Engine()->getCurrentPageURL(). '?pg=' . ($page - 1))
 					);
 				}
 
 				else {
-					$li->setValue('&larr; Previous');
+					$li->setValue(__('&larr; Previous'));
 				}
 
 				$ul->appendChild($li);
 
 				## Summary
-				$li = new XMLElement('li', 'Page ' . $page . ' of ' . max($page, $pages));
-
-				$li->setAttribute('title', 'Viewing ' . $start . ' - ' . $end . ' of ' . $total . ' entries');
-
+				$li = new XMLElement('li', __('Page %s of %s', array($page, max($page, $pages))));
+				$li->setAttribute('title', __('Viewing %s - %s of entries', array($start, $end, $total)));
 				$ul->appendChild($li);
 
 				## Next
@@ -265,12 +247,12 @@
 
 				if ($page < $pages) {
 					$li->appendChild(
-						Widget::Anchor('Next &rarr;', Symphony::Engine()->getCurrentPageURL(). '?pg=' . ($page + 1))
+						Widget::Anchor(__('Next &rarr;'), Symphony::Engine()->getCurrentPageURL(). '?pg=' . ($page + 1))
 					);
 				}
 
 				else {
-					$li->setValue('Next &rarr;');
+					$li->setValue(__('Next &rarr;'));
 				}
 
 				$ul->appendChild($li);
@@ -280,12 +262,12 @@
 
 				if ($page < $pages) {
 					$li->appendChild(
-						Widget::Anchor('Last', Symphony::Engine()->getCurrentPageURL(). '?pg=' . $pages)
+						Widget::Anchor(__('Last'), Symphony::Engine()->getCurrentPageURL(). '?pg=' . $pages)
 					);
 				}
 
 				else {
-					$li->setValue('Last');
+					$li->setValue(__('Last'));
 				}
 
 				$ul->appendChild($li);

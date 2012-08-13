@@ -130,37 +130,40 @@
 		}
 
 		public function setPage($context) {
-			// Check to see if the page has 'etf' page type
-			if(is_array($context['page_data']['type']) && in_array('etf', $context['page_data']['type'])) {
-				// Check to see that the page has been requested by someone who is logged in
-				// or someone who has passed the ETF header
-				if(
-					(isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] == 'EmailTemplateFilter')
-					|| Frontend::instance()->isLoggedIn() && Frontend::instance()->Author->isDeveloper()
-				) {
-					// All good!
-					self::$page = $context['page'];
-				}
-				else {
-					// User has no access to this page, so look for a custom 403 page
-					if($row = PageManager::fetchPageByType('403')) {
-						$row['type'] = PageManager::fetchPageTypes($row['id']);
-						$row['filelocation'] = PageManager::resolvePageFileLocation($row['path'], $row['handle']);
+			self::$page = $context['page'];
 
-						$context['page_data'] = $row;
-						return;
-					}
-					else {
-						// No custom 403, just throw default 403
-						GenericExceptionHandler::$enabled = true;
-						throw new SymphonyErrorPage(
-							__('Please <a href="%s">login</a> to view this page.', array(SYMPHONY_URL . '/login/')),
-							__('Forbidden'),
-							'error',
-							array('header' => 'HTTP/1.0 403 Forbidden')
-						);
-					}
-	 			}
+			// Check to see if the page has 'etf' page type
+			if (is_array($context['page_data']['type']) && in_array('etf', $context['page_data']['type'])) {
+				// Check to see if the ETF header was set:
+				$is_etf_request = (
+					isset($_SERVER['HTTP_X_REQUESTED_WITH'])
+					&& $_SERVER['HTTP_X_REQUESTED_WITH'] === 'EmailTemplateFilter'
+				);
+				// Make sure the viewer is a developer:
+				$is_logged_in = (
+					Frontend::instance()->isLoggedIn()
+					&& Frontend::instance()->Author->isDeveloper()
+				);
+
+				if ($is_etf_request || $is_logged_in) return;
+
+				// User has no access to this page, so look for a custom 403 page
+				if ($row = PageManager::fetchPageByType('403')) {
+					$row['type'] = PageManager::fetchPageTypes($row['id']);
+					$row['filelocation'] = PageManager::resolvePageFileLocation($row['path'], $row['handle']);
+					$context['page_data'] = $row;
+				}
+
+				// No custom 403, just throw default 403:
+				else {
+					GenericExceptionHandler::$enabled = true;
+					throw new SymphonyErrorPage(
+						__('Please <a href="%s">login</a> to view this page.', array(SYMPHONY_URL . '/login/')),
+						__('Forbidden'),
+						'error',
+						array('header' => 'HTTP/1.0 403 Forbidden')
+					);
+				}
 			}
 		}
 
@@ -361,7 +364,7 @@
 				$data->appendChild($params);
 			}
 
-			if(!is_null(self::$page)) {
+			if (self::$page instanceof FrontendPage) {
 				self::$page->processDatasources($template['datasources'], $data, array(
 					'etf-entry-id' => $entry_id
 				));

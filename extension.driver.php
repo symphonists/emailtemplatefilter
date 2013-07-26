@@ -164,8 +164,8 @@
 					");
 
 					if($row) {
-						$row['type'] = FrontendPage::fetchPageTypes($row['id']);
-						$row['filelocation'] = FrontendPage::resolvePageFileLocation($row['path'], $row['handle']);
+						$row['type'] = PageManager::fetchPageTypes($row['id']);
+						$row['filelocation'] = PageManager::resolvePageFileLocation($row['path'], $row['handle']);
 						$context['page_data'] = $row;
 						return;
 					}

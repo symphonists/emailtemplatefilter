@@ -518,7 +518,7 @@
 
 			Symphony::Database()->insert($email, 'tbl_etf_logs');
 
-			return $return;
+			return $success;
 		}
 
 		public function findAttachments($email) {

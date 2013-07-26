@@ -14,8 +14,8 @@
 		protected $_driver = null;
 		protected $_conditions = array();
 
-		public function __construct(&$parent){
-			parent::__construct($parent);
+		public function __construct(){
+			parent::__construct();
 
 			$this->_driver = Symphony::ExtensionManager()->create('emailtemplatefilter');
 		}

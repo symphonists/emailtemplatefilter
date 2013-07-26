@@ -17,8 +17,8 @@
 		protected $_uri = null;
 		protected $_valid = true;
 
-		public function __construct($parent) {
-			parent::__construct($parent);
+		public function __construct() {
+			parent::__construct();
 
 			$this->_uri = URL . '/symphony/extension/emailtemplatefilter';
 			$this->_driver = Symphony::ExtensionManager()->create('emailtemplatefilter');

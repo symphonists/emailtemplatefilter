@@ -38,7 +38,7 @@
 					`conditions` int(11) unsigned default NULL,
 					`datasources` text default NULL,
 					PRIMARY KEY (`id`)
-				)
+				) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci
 			");
 
 			Symphony::Database()->query("
@@ -57,7 +57,7 @@
 					`page` int(11) NOT NULL,
 					`params` varchar(255),
 					PRIMARY KEY (`id`)
-				)
+				) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci
 			");
 
 			Symphony::Database()->query("
@@ -76,7 +76,7 @@
 					`recipients` varchar(255),
 					`message` text,
 					PRIMARY KEY (`id`)
-				)
+				) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci
 			");
 
 			return true;
@@ -164,8 +164,8 @@
 					");
 
 					if($row) {
-						$row['type'] = FrontendPage::fetchPageTypes($row['id']);
-						$row['filelocation'] = FrontendPage::resolvePageFileLocation($row['path'], $row['handle']);
+						$row['type'] = PageManager::fetchPageTypes($row['id']);
+						$row['filelocation'] = PageManager::resolvePageFileLocation($row['path'], $row['handle']);
 						$context['page_data'] = $row;
 						return;
 					}

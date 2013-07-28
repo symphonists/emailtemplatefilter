@@ -17,8 +17,8 @@
 		protected $_uri = null;
 		protected $_valid = true;
 
-		public function __construct($parent) {
-			parent::__construct($parent);
+		public function __construct() {
+			parent::__construct();
 
 			$this->_uri = URL . '/symphony/extension/emailtemplatefilter';
 			$this->_driver = Symphony::ExtensionManager()->create('emailtemplatefilter');
@@ -227,7 +227,7 @@
 			));
 
 			if (isset($this->_errors['name'])) {
-				$label = Widget::wrapFormElementWithError($label, $this->_errors['name']);
+				$label = Widget::Error($label, $this->_errors['name']);
 			}
 
 			$fieldset->appendChild($label);
@@ -340,7 +340,7 @@
 			));
 
 			if (isset($this->_errors["{$sortorder}:subject"])) {
-				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:subject"]);
+				$label = Widget::Error($label, $this->_errors["{$sortorder}:subject"]);
 			}
 
 			$wrapper->appendChild($label);
@@ -354,7 +354,7 @@
 			));
 
 			if (isset($this->_errors["{$sortorder}:sender"])) {
-				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:sender"]);
+				$label = Widget::Error($label, $this->_errors["{$sortorder}:sender"]);
 			}
 
 			$wrapper->appendChild($label);
@@ -368,7 +368,7 @@
 			));
 
 			if (isset($this->_errors["{$sortorder}:senders"])) {
-				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:senders"]);
+				$label = Widget::Error($label, $this->_errors["{$sortorder}:senders"]);
 			}
 
 			$wrapper->appendChild($label);
@@ -404,7 +404,7 @@
 			));
 
 			if (isset($this->_errors["{$sortorder}:recipients"])) {
-				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:recipients"]);
+				$label = Widget::Error($label, $this->_errors["{$sortorder}:recipients"]);
 			}
 
 			$help = new XMLElement('p');
@@ -428,7 +428,7 @@
 			));
 
 			if (isset($this->_errors["{$sortorder}:expression"])) {
-				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:expression"]);
+				$label = Widget::Error($label, $this->_errors["{$sortorder}:expression"]);
 			}
 
 			$wrapper->appendChild($label);
@@ -452,7 +452,7 @@
 			));
 
 			if (isset($this->_errors["{$sortorder}:page"])) {
-				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:page"]);
+				$label = Widget::Error($label, $this->_errors["{$sortorder}:page"]);
 			}
 
 			$div->appendChild($label);
@@ -466,7 +466,7 @@
 			));
 
 			if (isset($this->_errors["{$sortorder}:params"])) {
-				$label = Widget::wrapFormElementWithError($label, $this->_errors["{$sortorder}:params"]);
+				$label = Widget::Error($label, $this->_errors["{$sortorder}:params"]);
 			}
 
 			$div->appendChild($label);

@@ -38,7 +38,7 @@
 					`conditions` int(11) unsigned default NULL,
 					`datasources` text default NULL,
 					PRIMARY KEY (`id`)
-				)
+				) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci
 			");
 
 			Symphony::Database()->query("
@@ -57,7 +57,7 @@
 					`page` int(11) NOT NULL,
 					`params` varchar(255),
 					PRIMARY KEY (`id`)
-				)
+				) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci
 			");
 
 			Symphony::Database()->query("
@@ -76,7 +76,7 @@
 					`recipients` varchar(255),
 					`message` text,
 					PRIMARY KEY (`id`)
-				)
+				) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci
 			");
 
 			return true;
@@ -164,8 +164,8 @@
 					");
 
 					if($row) {
-						$row['type'] = FrontendPage::fetchPageTypes($row['id']);
-						$row['filelocation'] = FrontendPage::resolvePageFileLocation($row['path'], $row['handle']);
+						$row['type'] = PageManager::fetchPageTypes($row['id']);
+						$row['filelocation'] = PageManager::resolvePageFileLocation($row['path'], $row['handle']);
 						$context['page_data'] = $row;
 						return;
 					}
@@ -349,47 +349,50 @@
 			}
 		}
 
-		protected function getData($template, $entry_id) {
-			$data = new XMLElement('data');
+        protected function getData($template, $entry_id) {
+            $data = new XMLElement('data');
 
-			if (!empty(self::$params)) {
-				$params = new XMLElement('param');
+            if (!empty(self::$params)) {
+                $params = new XMLElement('param');
 
-				foreach (self::$params as $key => $value) {
-					if (is_integer($key)) $key = 'item';
+                $this->getDataParam(self::$params, $params);
 
-					$key = General::sanitize($key);
+                $data->appendChild($params);
+            }
 
-					if (is_array($value)) {
-						$child = new XMLElement($key);
-						$this->getDataParam($value, $child);
-					}
+            if(!is_null(self::$page)) {
+                self::$page->processDatasources($template['datasources'], $data, array(
+                    'etf-entry-id' => $entry_id
+                ));
+            }
 
-					else {
-						if (is_bool($value)) {
-							$value = ($value ? 'yes' : 'no');
-						}
+            $dom = new DOMDocument();
+            $dom->loadXML($data->generate(true));
 
-						$child = new XMLElement($key, General::sanitize((string)$value));
-					}
+            return $dom;
+        }
 
-					$params->appendChild($child);
-				}
+        protected function getDataParam($value, &$parent) {
+            foreach ($value as $key => $value) {
+                if (is_integer($key)) $key = 'item';
 
-				$data->appendChild($params);
-			}
+                $key = General::sanitize($key);
 
-			if(!is_null(self::$page)) {
-				self::$page->processDatasources($template['datasources'], $data, array(
-					'etf-entry-id' => $entry_id
-				));
-			}
+                if (is_array($value)) {
+                    $child = new XMLElement($key);
+                    $this->getDataParam($value, $child);
+                }
 
-			$dom = new DOMDocument();
-			$dom->loadXML($data->generate(true));
+                else {
+                    if (is_bool($value)) {
+                        $value = ($value ? 'yes' : 'no');
+                    }
+                    $child = new XMLElement($key, General::sanitize((string)$value));
+                }
 
-			return $dom;
-		}
+                $parent->appendChild($child);
+            }
+        }
 
 		public function sendEmail($entry_id, $template_id) {
 			$template = $this->getTemplate($template_id);
@@ -518,7 +521,7 @@
 
 			Symphony::Database()->insert($email, 'tbl_etf_logs');
 
-			return $return;
+			return $success;
 		}
 
 		public function findAttachments($email) {

@@ -355,26 +355,7 @@
 			if (!empty(self::$params)) {
 				$params = new XMLElement('param');
 
-				foreach (self::$params as $key => $value) {
-					if (is_integer($key)) $key = 'item';
-
-					$key = General::sanitize($key);
-
-					if (is_array($value)) {
-						$child = new XMLElement($key);
-						$this->getDataParam($value, $child);
-					}
-
-					else {
-						if (is_bool($value)) {
-							$value = ($value ? 'yes' : 'no');
-						}
-
-						$child = new XMLElement($key, General::sanitize((string)$value));
-					}
-
-					$params->appendChild($child);
-				}
+				$this->getDataParam(self::$params, $params);
 
 				$data->appendChild($params);
 			}
@@ -389,6 +370,28 @@
 			$dom->loadXML($data->generate(true));
 
 			return $dom;
+		}
+
+		protected function getDataParam($value, &$parent) {
+			foreach ($value as $key => $value) {
+				if (is_integer($key)) $key = 'item';
+
+				$key = General::sanitize($key);
+
+				if (is_array($value)) {
+					$child = new XMLElement($key);
+					$this->getDataParam($value, $child);
+				}
+
+				else {
+					if (is_bool($value)) {
+						$value = ($value ? 'yes' : 'no');
+					}
+					$child = new XMLElement($key, General::sanitize((string)$value));
+				}
+
+				$parent->appendChild($child);
+			}
 		}
 
 		public function sendEmail($entry_id, $template_id) {
@@ -518,7 +521,7 @@
 
 			Symphony::Database()->insert($email, 'tbl_etf_logs');
 
-			return $return;
+			return $success;
 		}
 
 		public function findAttachments($email) {

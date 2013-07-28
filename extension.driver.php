@@ -349,47 +349,50 @@
 			}
 		}
 
-		protected function getData($template, $entry_id) {
-			$data = new XMLElement('data');
+        protected function getData($template, $entry_id) {
+            $data = new XMLElement('data');
 
-			if (!empty(self::$params)) {
-				$params = new XMLElement('param');
+            if (!empty(self::$params)) {
+                $params = new XMLElement('param');
 
-				foreach (self::$params as $key => $value) {
-					if (is_integer($key)) $key = 'item';
+                $this->getDataParam(self::$params, $params);
 
-					$key = General::sanitize($key);
+                $data->appendChild($params);
+            }
 
-					if (is_array($value)) {
-						$child = new XMLElement($key);
-						$this->getDataParam($value, $child);
-					}
+            if(!is_null(self::$page)) {
+                self::$page->processDatasources($template['datasources'], $data, array(
+                    'etf-entry-id' => $entry_id
+                ));
+            }
 
-					else {
-						if (is_bool($value)) {
-							$value = ($value ? 'yes' : 'no');
-						}
+            $dom = new DOMDocument();
+            $dom->loadXML($data->generate(true));
 
-						$child = new XMLElement($key, General::sanitize((string)$value));
-					}
+            return $dom;
+        }
 
-					$params->appendChild($child);
-				}
+        protected function getDataParam($value, &$parent) {
+            foreach ($value as $key => $value) {
+                if (is_integer($key)) $key = 'item';
 
-				$data->appendChild($params);
-			}
+                $key = General::sanitize($key);
 
-			if(!is_null(self::$page)) {
-				self::$page->processDatasources($template['datasources'], $data, array(
-					'etf-entry-id' => $entry_id
-				));
-			}
+                if (is_array($value)) {
+                    $child = new XMLElement($key);
+                    $this->getDataParam($value, $child);
+                }
 
-			$dom = new DOMDocument();
-			$dom->loadXML($data->generate(true));
+                else {
+                    if (is_bool($value)) {
+                        $value = ($value ? 'yes' : 'no');
+                    }
+                    $child = new XMLElement($key, General::sanitize((string)$value));
+                }
 
-			return $dom;
-		}
+                $parent->appendChild($child);
+            }
+        }
 
 		public function sendEmail($entry_id, $template_id) {
 			$template = $this->getTemplate($template_id);

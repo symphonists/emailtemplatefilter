@@ -38,7 +38,7 @@
 					`conditions` int(11) unsigned default NULL,
 					`datasources` text default NULL,
 					PRIMARY KEY (`id`)
-				)
+				) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci
 			");
 
 			Symphony::Database()->query("
@@ -57,7 +57,7 @@
 					`page` int(11) NOT NULL,
 					`params` varchar(255),
 					PRIMARY KEY (`id`)
-				)
+				) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci
 			");
 
 			Symphony::Database()->query("
@@ -76,7 +76,7 @@
 					`recipients` varchar(255),
 					`message` text,
 					PRIMARY KEY (`id`)
-				)
+				) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci
 			");
 
 			return true;
@@ -127,14 +127,14 @@
 			return array(
 				array(
 					'location'	=> 250,
-					'name'		=> 'Emails',
+					'name'		=> __('Emails'),
 					'children'	=> array(
 						array(
-							'name'		=> 'Templates',
+							'name'		=> __('Templates'),
 							'link'		=> '/templates/'
 						),
 						array(
-							'name'		=> 'Logs',
+							'name'		=> __('Logs'),
 							'link'		=> '/logs/'
 						)
 					)
@@ -164,8 +164,8 @@
 					");
 
 					if($row) {
-						$row['type'] = FrontendPage::fetchPageTypes($row['id']);
-						$row['filelocation'] = FrontendPage::resolvePageFileLocation($row['path'], $row['handle']);
+						$row['type'] = PageManager::fetchPageTypes($row['id']);
+						$row['filelocation'] = PageManager::resolvePageFileLocation($row['path'], $row['handle']);
 						$context['page_data'] = $row;
 						return;
 					}
@@ -333,7 +333,7 @@
 
 				$context['options'][] = array(
 					$id, $selected,
-					General::sanitize("Send Email: {$template['name']}")
+					General::sanitize(__('Send Email: %s', array($template['name'])))
 				);
 			}
 		}
@@ -355,26 +355,7 @@
 			if (!empty(self::$params)) {
 				$params = new XMLElement('param');
 
-				foreach (self::$params as $key => $value) {
-					if (is_integer($key)) $key = 'item';
-
-					$key = General::sanitize($key);
-
-					if (is_array($value)) {
-						$child = new XMLElement($key);
-						$this->getDataParam($value, $child);
-					}
-
-					else {
-						if (is_bool($value)) {
-							$value = ($value ? 'yes' : 'no');
-						}
-
-						$child = new XMLElement($key, General::sanitize((string)$value));
-					}
-
-					$params->appendChild($child);
-				}
+				$this->getDataParam(self::$params, $params);
 
 				$data->appendChild($params);
 			}
@@ -389,6 +370,28 @@
 			$dom->loadXML($data->generate(true));
 
 			return $dom;
+		}
+
+		protected function getDataParam($value, &$parent) {
+			foreach ($value as $key => $value) {
+				if (is_integer($key)) $key = 'item';
+
+				$key = General::sanitize($key);
+
+				if (is_array($value)) {
+					$child = new XMLElement($key);
+					$this->getDataParam($value, $child);
+				}
+
+				else {
+					if (is_bool($value)) {
+						$value = ($value ? 'yes' : 'no');
+					}
+					$child = new XMLElement($key, General::sanitize((string)$value));
+				}
+
+				$parent->appendChild($child);
+			}
 		}
 
 		public function sendEmail($entry_id, $template_id) {
@@ -504,11 +507,11 @@
 			}
 
 			catch (EmailGatewayException $e) {
-			    throw new SymphonyErrorPage('Error sending email. ' . $e->getMessage());
+			    throw new SymphonyErrorPage(__('Error sending email. %s', $e->getMessage()));
 			}
 
 			catch (EmailException $e) {
-			    throw new SymphonyErrorPage('Error sending email. ' . $e->getMessage());
+			    throw new SymphonyErrorPage(__('Error sending email. %s', $e->getMessage()));
 			}
 
 			// Log the email:
@@ -518,7 +521,7 @@
 
 			Symphony::Database()->insert($email, 'tbl_etf_logs');
 
-			return $return;
+			return $success;
 		}
 
 		public function findAttachments($email) {

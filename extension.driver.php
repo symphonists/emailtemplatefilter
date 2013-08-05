@@ -318,7 +318,7 @@
 
 				$context['options'][] = array(
 					$id, $selected,
-					General::sanitize("Send Email: {$template['name']}")
+					General::sanitize(__('Send Email: %s', array($template['name'])))
 				);
 			}
 		}
@@ -493,11 +493,11 @@
 			}
 
 			catch (EmailGatewayException $e) {
-			    throw new SymphonyErrorPage('Error sending email. ' . $e->getMessage());
+			    throw new SymphonyErrorPage(__('Error sending email. %s', $e->getMessage()));
 			}
 
 			catch (EmailException $e) {
-			    throw new SymphonyErrorPage('Error sending email. ' . $e->getMessage());
+			    throw new SymphonyErrorPage(__('Error sending email. %s', $e->getMessage()));
 			}
 
 			// Log the email:

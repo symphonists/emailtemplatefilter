@@ -75,13 +75,13 @@
 			$pages = ceil($total / $limit);
 
 			$tableHead = array(
-				array('Date', 'col'),
-				array('Subject', 'col'),
-				array('Sender Name', 'col'),
-				array('Senders', 'col'),
-				array('Recipients', 'col'),
-				array('Template', 'col'),
-				array('Entry', 'col')
+				array(__('Date'), 'col'),
+				array(__('Subject'), 'col'),
+				array(__('Sender Name'), 'col'),
+				array(__('Senders'), 'col'),
+				array(__('Recipients'), 'col'),
+				array(__('Template'), 'col'),
+				array(__('Entry'), 'col')
 			);
 
 			$tableBody = array();

@@ -61,8 +61,8 @@
 
 		public function __viewIndex() {
 			$this->setPageType('table');
-			$this->setTitle('Symphony &ndash; Email Logs');
-			$this->appendSubheading('Logs');
+			$this->setTitle(__('Symphony &ndash; Email Logs'));
+			$this->appendSubheading(__('Logs'));
 
 			$page = (
 				isset($_GET['pg']) && (integer)$_GET['pg'] > 1
@@ -79,14 +79,14 @@
 			$entryManager = new EntryManager(Symphony::Engine());
 
 			$tableHead = array(
-				array('Date', 'col'),
-				array('Subject', 'col'),
-				array('Sender Name', 'col'),
-				array('Senders', 'col'),
-				array('Recipients', 'col'),
-				array('Template', 'col'),
-				//array('Section', 'col'),
-				array('Entry', 'col')
+				array(__('Date'), 'col'),
+				array(__('Subject'), 'col'),
+				array(__('Sender Name'), 'col'),
+				array(__('Senders'), 'col'),
+				array(__('Recipients'), 'col'),
+				array(__('Template'), 'col'),
+				//array(__('Section'), 'col'),
+				array(__('Entry'), 'col')
 			);
 
 			$tableBody = array();
@@ -102,7 +102,7 @@
 
 				$col_date = Widget::TableData(
 					Widget::Anchor(
-						DateTimeObj::get(__SYM_DATETIME_FORMAT__, strtotime($log_date)),
+						DateTimeObj::format(strtotime($log_date), __SYM_DATETIME_FORMAT__),
 						URL . "/symphony/extension/emailtemplatefilter/logs/preview/{$log_id}/"
 					)
 				);
@@ -115,7 +115,7 @@
 				}
 
 				else {
-					$col_subject = Widget::TableData('None', 'inactive');
+					$col_subject = Widget::TableData(__('None'), 'inactive');
 				}
 
 				if (!empty($log_sender)) {
@@ -125,7 +125,7 @@
 				}
 
 				else {
-					$col_sender = Widget::TableData('None', 'inactive');
+					$col_sender = Widget::TableData(__('None'), 'inactive');
 				}
 
 				if (!empty($log_senders)) {
@@ -135,7 +135,7 @@
 				}
 
 				else {
-					$col_senders = Widget::TableData('None', 'inactive');
+					$col_senders = Widget::TableData(__('None'), 'inactive');
 				}
 
 				if (!empty($log_recipients)) {
@@ -145,7 +145,7 @@
 				}
 
 				else {
-					$col_recipients = Widget::TableData('None', 'inactive');
+					$col_recipients = Widget::TableData(__('None'), 'inactive');
 				}
 
 				if ($template = $this->_driver->getTemplate($log_template_id)) {
@@ -158,7 +158,7 @@
 				}
 
 				else {
-					$col_template = Widget::TableData('None', 'inactive');
+					$col_template = Widget::TableData(__('None'), 'inactive');
 				}
 
 				$entries = $entryManager->fetch($log_entry_id, null, null, null, null, null, false, true);
@@ -169,7 +169,7 @@
 					$column = array_shift($section->fetchVisibleColumns());
 
 					$data = $entry->getData($column->get('id'));
-					$link = Widget::Anchor('None', URL . '/symphony/publish/' . $section->get('handle') . '/edit/' . $entry->get('id') . '/', $entry->get('id'), 'content');
+					$link = Widget::Anchor(__('None'), URL . '/symphony/publish/' . $section->get('handle') . '/edit/' . $entry->get('id') . '/', $entry->get('id'), 'content');
 
 					/*
 					$col_section = Widget::TableData(
@@ -185,7 +185,7 @@
 
 				else {
 					//$col_section = Widget::TableData('None', 'inactive');
-					$col_entry = Widget::TableData('None', 'inactive');
+					$col_entry = Widget::TableData(__('None'), 'inactive');
 				}
 
 				$tableBody[] = Widget::TableRow(
@@ -209,12 +209,12 @@
 			$actions->setAttribute('class', 'actions');
 
 			$options = array(
-				array(null, false, 'With Selected...'),
-				array('delete', false, 'Delete')
+				array(null, false, __('With Selected...')),
+				array('delete', false, __('Delete'))
 			);
 
 			$actions->appendChild(Widget::Select('with-selected', $options));
-			$actions->appendChild(Widget::Input('action[apply]', 'Apply', 'submit'));
+			$actions->appendChild(Widget::Input('action[apply]', __('Apply'), 'submit'));
 
 			$this->Form->appendChild($actions);
 
@@ -228,12 +228,12 @@
 
 				if ($page > 1) {
 					$li->appendChild(
-						Widget::Anchor('First', Symphony::Engine()->getCurrentPageURL() . '?pg=1')
+						Widget::Anchor(__('First'), Symphony::Engine()->getCurrentPageURL() . '?pg=1')
 					);
 				}
 
 				else {
-					$li->setValue('First');
+					$li->setValue(__('First'));
 				}
 
 				$ul->appendChild($li);
@@ -243,20 +243,20 @@
 
 				if ($page > 1) {
 					$li->appendChild(
-						Widget::Anchor('&larr; Previous', Symphony::Engine()->getCurrentPageURL(). '?pg=' . ($page - 1))
+						Widget::Anchor(__('&larr; Previous'), Symphony::Engine()->getCurrentPageURL(). '?pg=' . ($page - 1))
 					);
 				}
 
 				else {
-					$li->setValue('&larr; Previous');
+					$li->setValue(__('&larr; Previous'));
 				}
 
 				$ul->appendChild($li);
 
 				## Summary
-				$li = new XMLElement('li', 'Page ' . $page . ' of ' . max($page, $pages));
+				$li = new XMLElement('li', __('Page %1$s of %2$s', array($page, max($page, $pages))));
 
-				$li->setAttribute('title', 'Viewing ' . $start . ' - ' . $end . ' of ' . $total . ' entries');
+				$li->setAttribute('title', __('Viewing %1$s - %2$s of %3$s entries', array($start, $end, $total)));
 
 				$ul->appendChild($li);
 
@@ -265,12 +265,12 @@
 
 				if ($page < $pages) {
 					$li->appendChild(
-						Widget::Anchor('Next &rarr;', Symphony::Engine()->getCurrentPageURL(). '?pg=' . ($page + 1))
+						Widget::Anchor(__('Next &rarr;'), Symphony::Engine()->getCurrentPageURL(). '?pg=' . ($page + 1))
 					);
 				}
 
 				else {
-					$li->setValue('Next &rarr;');
+					$li->setValue(__('Next &rarr;'));
 				}
 
 				$ul->appendChild($li);
@@ -280,12 +280,12 @@
 
 				if ($page < $pages) {
 					$li->appendChild(
-						Widget::Anchor('Last', Symphony::Engine()->getCurrentPageURL(). '?pg=' . $pages)
+						Widget::Anchor(__('Last'), Symphony::Engine()->getCurrentPageURL(). '?pg=' . $pages)
 					);
 				}
 
 				else {
-					$li->setValue('Last');
+					$li->setValue(__('Last'));
 				}
 
 				$ul->appendChild($li);
